@@ -30,7 +30,6 @@ const formatDate = (value?: string) => {
 };
 
 const orderStatus = (order: ShopOrder) => {
-  if (order.status === "paid") return { label: "Paid", color: "green" as const };
   if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
   if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
   return { label: "Awaiting payment", color: "gold" as const };

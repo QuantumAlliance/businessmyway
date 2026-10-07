@@ -4,10 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useGetOrdersQuery, type ShopOrder } from "@/redux/features/orders/orderApi";
+import { useGetOrdersQuery, useConfirmOrderReceivedMutation, type ShopOrder } from "@/redux/features/orders/orderApi";
 import ReviewModal from "@/components/UI/ReviewModal";
 import OrderDetailModal from "@/components/UI/OrderDetailModal";
 import Pagination from "@/components/UI/Pagination";
+import { IoIosInformationCircleOutline } from "react-icons/io";
+import { button } from "framer-motion/client";
 
 const ORDERS_PER_PAGE = 5;
 
@@ -15,21 +17,26 @@ const truncate = (text: string, max = 36) =>
   text.length > max ? `${text.slice(0, max).trim()}…` : text;
 
 const statusMeta = (order: ShopOrder) => {
-  if (order.status === "paid") return { label: "Paid", color: "green" as const };
+  if (order.status === "processing") return { label: "Processing", color: "blue" as const };
+  if (order.status === "on_the_way") return { label: "On The Way", color: "cyan" as const };
+  if (order.status === "delivered") return { label: "Delivered", color: "purple" as const };
   if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
   if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
-  return { label: "Awaiting payment", color: "gold" as const };
+  return { label: "Pending", color: "gold" as const };
 };
 
 const OrderHistoryContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data, isLoading } = useGetOrdersQuery();
-  const orders = data?.data || [];
+  const orders = useMemo(() => {
+    return [...(data?.data || [])].reverse();
+  }, [data]);
   const [currentPage, setCurrentPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [confirmReceived, { isLoading: isConfirming }] = useConfirmOrderReceivedMutation();
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ORDERS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
@@ -72,34 +79,53 @@ const OrderHistoryContent = () => {
     }
   };
 
+  const handleConfirmReceived = async (order: ShopOrder) => {
+    try {
+      await confirmReceived(order.id).unwrap();
+      setDetailOpen(false);
+    } catch (error) {
+      console.error("Failed to confirm order receipt:", error);
+    }
+  };
+
   const columns: ColumnsType<ShopOrder> = [
-    {
-      title: "Order",
-      dataIndex: "orderNumber",
-      key: "orderNumber",
-      render: (value: string) => (
-        <span className="font-semibold text-[#2b2b2b]">#{value}</span>
+      {
+      title: "Sl",
+      dataIndex: "sl",
+      key: "sl",
+      render: (_: any, __: any, index: number) => (
+        <span className="font-semibold text-[#2b2b2b]">{index + 1}</span>
       ),
     },
     {
-      title: "Date",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (value?: string) =>
-        value
-          ? new Date(value).toLocaleDateString("en-GB", {
+      title: "Tracking ID",
+      key: "trackingId",
+      render: (_, order) => (
+        <span className="font-semibold text-[#2b2b2b]">
+          {order.shippingInfo?.trackingId ? `#${order.shippingInfo.trackingId}` : "Processing"}
+        </span>
+      ),
+    },
+    {
+      title: "Delivery Date",
+      key: "deliveryDate",
+      render: (_, order) => {
+        const dateValue = (order as any).deliveredAt || order.shippingInfo?.estimatedDeliveryDate;
+        return dateValue
+          ? new Date(dateValue).toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
               year: "numeric",
             })
-          : "—",
+          : "Processing";
+      },
     },
     {
       title: "Items",
       dataIndex: "items",
       key: "items",
       render: (items: ShopOrder["items"]) => {
-        const label = items.map((item) => `${item.name} × ${item.qty}`).join(" · ");
+        const label = items.map((item) => `${item.qty}`).join(" · ");
         return (
           <span className="block max-w-[200px] truncate text-[#4d4a44]" title={label}>
             {label}
@@ -108,19 +134,17 @@ const OrderHistoryContent = () => {
       },
     },
     {
-      title: "Location",
-      key: "location",
-      render: (_, order) => {
-        const location = order.customer?.location || "";
-        return location ? (
-          <span className="block max-w-[160px] truncate text-[#4d4a44]" title={location}>
-            {truncate(location)}
-          </span>
-        ) : (
-          <span className="text-[#9a958c]">—</span>
-        );
+      title: "Delivery Type",
+      dataIndex: "deliveryType",
+      key: "deliveryType",
+      render: (type?: string) => {
+        if (!type) return "—";
+        if (type === "standard") return "Standard Delivery";
+        if (type === "express") return "Express Delivery";
+        return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
       },
     },
+
     {
       title: "Status",
       key: "status",
@@ -130,7 +154,7 @@ const OrderHistoryContent = () => {
       },
     },
     {
-      title: "Total",
+      title: "Amount",
       key: "total",
       align: "right",
       render: (_, order) => (
@@ -140,25 +164,49 @@ const OrderHistoryContent = () => {
       ),
     },
     {
+
+      title: "Review",
+      key: "total",
+      align: "right",
+      render: (_, order) => (
+        <button
+          type="button"
+          onClick={() => openReview(order)}
+          className="rounded-md border border-[#BF8D2F] px-3 py-1.5 text-xs font-semibold text-[#BF8D2F] transition-colors hover:bg-[#BF8D2F] hover:text-white"
+        >
+          Review
+        </button>
+      ),
+    },
+    {
+      title: "Receive",
+      key: "receive",
+      align: "right",
+      render: (_, order) => (
+        <button
+          type="button"
+          onClick={() => handleConfirmReceived(order)}
+          disabled={isConfirming || order.status !== "on_the_way"}
+          className="rounded-sm border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Receive
+        </button>
+      ),
+    },
+    {
       title: "Action",
       key: "action",
       align: "center",
       render: (_, order) => (
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center  gap-2">
           <button
             type="button"
             onClick={() => openDetail(order)}
-            className="rounded-sm border border-[#E5E5E5] px-3 py-1.5 text-xs font-semibold text-[#5C564C] transition-colors hover:border-[#BF8D2F] hover:text-[#BF8D2F]"
+            className="rounded-full border border-[#E5E5E5] px-3 py-1.5 text-xs l font-semibold text-[#5C564C] transition-colors hover:border-[#BF8D2F] hover:text-[#BF8D2F]"
           >
-            View
+            <IoIosInformationCircleOutline size={24} />
           </button>
-          <button
-            type="button"
-            onClick={() => openReview(order)}
-            className="rounded-sm border border-[#BF8D2F] px-3 py-1.5 text-xs font-semibold text-[#BF8D2F] transition-colors hover:bg-[#BF8D2F] hover:text-white"
-          >
-            Review
-          </button>
+           
         </div>
       ),
     },
@@ -198,6 +246,8 @@ const OrderHistoryContent = () => {
         order={selectedOrder}
         onClose={closeDetail}
         onReview={openReview}
+        onConfirmReceived={handleConfirmReceived}
+        isConfirming={isConfirming}
       />
       <ReviewModal open={reviewOpen} onClose={closeReview} order={selectedOrder} />
     </div>

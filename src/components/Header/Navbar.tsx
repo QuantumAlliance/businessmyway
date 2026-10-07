@@ -115,7 +115,7 @@ const Navbar = () => {
             <div className="flex flex-col leading-tight">
               <TfiHeadphoneAlt className="w-5 h-5  mx-auto" />
               <span className=" text-gray-500 md:text-[10px] lg:text-sm text-center">Order on</span>
-              <span className="font-semibold text-center md:text-[10px] lg:text-xs">0113 217 7723</span>
+              <span className="font-semibold text-center md:text-[10px] lg:text-xs">01473467940</span>
             </div>
           </div>
 
@@ -223,7 +223,7 @@ const Navbar = () => {
             <FiPhone className="w-5 h-5" />
             <div className="flex flex-col leading-tight">
               <span className="text-sm text-gray-500 font-semibold">Order on</span>
-              <span className="text-xs">0113 217 7723</span>
+              <span className="text-xs">01473467940</span>
             </div>
           </div>
 

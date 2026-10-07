@@ -55,11 +55,13 @@ const EditAddressPage = () => {
   }, [data, addressId, form]);
 
   const countryOptions = useMemo(() => {
-    return Country.getAllCountries().map((c) => ({
-      value: c.name,
-      label: c.name,
-      isoCode: c.isoCode,
-    }));
+    return Country.getAllCountries()
+      .filter((c) => c.isoCode === "GB")
+      .map((c) => ({
+        value: c.name,
+        label: c.name,
+        isoCode: c.isoCode,
+      }));
   }, []);
 
   const stateOptions = useMemo(() => {

@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { ConfigProvider, Form, Input, Modal, Pagination, Select, Spin } from "antd";
 import Swal from "sweetalert2";
-import { FiEdit2, FiMinus, FiPlus } from "react-icons/fi";
+import { FiEdit2, FiMinus, FiPlus, FiTrash2 } from "react-icons/fi";
 import { useGetAdminCategoriesQuery } from "@/redux/features/category/categoryApi";
 import {
   useCreateBrandMutation,
   useGetAdminBrandsQuery,
   useUpdateBrandMutation,
+  useDeleteBrandMutation,
   type Brand,
 } from "@/redux/features/brands/brandApi";
 
@@ -33,6 +34,7 @@ const BrandsPage = () => {
   const { data: categoryData, isLoading: isCategoriesLoading } = useGetAdminCategoriesQuery();
   const [createBrand, { isLoading: isCreating }] = useCreateBrandMutation();
   const [updateBrand, { isLoading: isUpdating }] = useUpdateBrandMutation();
+  const [deleteBrand] = useDeleteBrandMutation();
   const brands = data?.data || [];
   const categories = categoryData?.data || [];
   const total = data?.meta?.total ?? 0;
@@ -107,6 +109,33 @@ const BrandsPage = () => {
     }
   };
 
+  const handleDelete = async (brand: Brand) => {
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await deleteBrand(brand.id).unwrap();
+        Swal.fire("Deleted!", "Brand has been deleted.", "success");
+        if (brands.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      } catch (error: unknown) {
+        const message =
+          (error as { data?: { message?: string } })?.data?.message ||
+          "Failed to delete brand.";
+        Swal.fire("Error", message, "error");
+      }
+    }
+  };
+
   return (
     <div className="w-full">
       <div className="mb-6 flex items-center justify-between gap-4">
@@ -156,14 +185,24 @@ const BrandsPage = () => {
                 ))}
                 </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => openEditModal(brand)}
-                  className="inline-flex items-center gap-1.5 rounded-[3px] border border-[#E8E0D4] px-3 py-1.5 text-xs font-medium text-[#5C564C] hover:bg-[#F6F3EE]"
-                >
-                  <FiEdit2 size={14} />
-                  Edit
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(brand)}
+                    className="inline-flex items-center gap-1.5 rounded-[3px] border border-[#E8E0D4] px-3 py-1.5 text-xs font-medium text-[#5C564C] hover:bg-[#F6F3EE]"
+                  >
+                    <FiEdit2 size={14} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(brand)}
+                    className="inline-flex items-center gap-1.5 rounded-[3px] border border-[#ffcccc] px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-[#ffe6e6]"
+                  >
+                    <FiTrash2 size={14} />
+                    Delete
+                  </button>
+                </div>
               </div>
               <p className="mb-4 text-sm leading-relaxed text-[#5C564C]">
                 {brand.description}

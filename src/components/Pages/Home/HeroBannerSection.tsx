@@ -5,7 +5,7 @@ import herosection from "@/assets/home/herosection.png";
 
 const HeroBannerSection = () => {
   return (
-    <section className="relative md:py-10 h-[62vh] sm:h-[50vh] md:h-[60vh] lg:h-[92vh] overflow-hidden">
+    <section className="relative md:py-10 h-[60vh] sm:h-[58vh] md:h-[60vh] lg:h-[92vh] overflow-hidden">
       <Image
         src={herosection}
         alt="Hero section background"
@@ -41,28 +41,25 @@ const HeroBannerSection = () => {
             sourced from the most celebrated regions on earth.
           </p>
 
-          <div className="mt-2 md:mt-4 lg:mt-8 flex flex-row gap-[10px]">
-            <Link href="/searchresult">
-              {/* <GifRevealWrapper borderSize={3}> */}
-                <button
-                  type="button"
-                  className="flex h-[40px] w-[200px] items-center justify-center rounded-sm bg-[#BF8D2F] px-2 text-white font-medium transition-colors hover:bg-[#a97922] md:h-[56px] md:w-[180px] lg:h-[56px] lg:w-[200px] lg:px-[10px] lg:py-[10px] xl:w-[316px]"
-                >
-                  Explore Collection
-                </button>
-              {/* </GifRevealWrapper> */}
-            </Link>
-            <Link href="/about-us">
-              {/* <GifRevealWrapper borderSize={3}> */}
-                <button
-                  type="button"
-                  className="flex h-[40px] w-[200px] items-center justify-center rounded-sm border border-black bg-white px-2 text-black font-medium transition-colors hover:bg-[#eeecec] md:h-[56px] md:w-[180px] lg:h-[56px] lg:w-[200px] lg:px-[10px] lg:py-[10px] xl:w-[316px]"
-                >
-                  Our Story
-                </button>
-              {/* </GifRevealWrapper> */}
-            </Link>
-          </div>
+          <div className="mt-2 flex w-full flex-row gap-3 py-2 md:mt-4 md:w-auto lg:mt-8">
+      <Link href="/searchresult" legacyBehavior>
+        <button
+          type="button"
+          className="flex h-10 flex-1 items-center justify-center rounded-sm bg-[#BF8D2F] px-4 font-medium text-white transition-colors hover:bg-[#a97922] md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
+        >
+          Explore Collection
+        </button>
+      </Link>
+
+      <Link href="/about-us" legacyBehavior>
+        <button
+          type="button"
+          className="flex h-10 flex-1 items-center justify-center rounded-sm border border-black bg-white px-4 font-medium text-black transition-colors hover:bg-gray-100 md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
+        >
+          Our Story
+        </button>
+      </Link>
+    </div>
         </div>
       </div>
     </section>

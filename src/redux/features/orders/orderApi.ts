@@ -17,16 +17,24 @@ export type OrderCustomer = {
   location: string;
 };
 
+export type ShippingInfo = {
+  company: string;
+  trackingId: string;
+  shippingDate: string;
+  estimatedDeliveryDate: string;
+};
+
 export type ShopOrder = {
   id: string;
   orderNumber: string;
-  status: "pending" | "paid" | "cancelled";
+  status: "pending"  | "processing" | "on_the_way" | "delivered" | "cancelled";
   deliveryType?: "standard" | "express" | "free_delivery" | "in_delivery" | "paid_delivery" | string;
   deliveryFee?: number;
   subtotal: number;
   total?: number;
   items: OrderItem[];
   customer: OrderCustomer;
+  shippingInfo?: ShippingInfo;
   paidAt?: string;
   createdAt?: string;
 };
@@ -64,6 +72,12 @@ type OrderListResponse = {
   data: ShopOrder[];
 };
 
+type UpdateOrderStatusPayload = {
+  id: string;
+  status: "pending"  | "processing" | "on_the_way" | "delivered" | "cancelled";
+  shippingInfo?: ShippingInfo;
+};
+
 const orderApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     checkoutOrder: builder.mutation<CheckoutResponse, CheckoutPayload>({
@@ -97,6 +111,21 @@ const orderApi = baseApi.injectEndpoints({
       query: () => "/admin/orders",
       providesTags: ["order"],
     }),
+    updateAdminOrderStatus: builder.mutation<OrderResponse, UpdateOrderStatusPayload>({
+      query: ({ id, status, shippingInfo }) => ({
+        url: `/admin/orders/${id}/status`,
+        method: "PATCH",
+        body: { status, shippingInfo },
+      }),
+      invalidatesTags: ["order"],
+    }),
+    confirmOrderReceived: builder.mutation<OrderResponse, string>({
+      query: (id) => ({
+        url: `/orders/${id}/confirm-received`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["order"],
+    }),
   }),
 });
 
@@ -106,4 +135,6 @@ export const {
   useGetOrderQuery,
   useGetOrdersQuery,
   useGetAdminOrdersQuery,
+  useUpdateAdminOrderStatusMutation,
+  useConfirmOrderReceivedMutation,
 } = orderApi;

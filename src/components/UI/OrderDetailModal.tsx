@@ -10,16 +10,20 @@ type OrderDetailModalProps = {
   order: ShopOrder | null;
   onClose: () => void;
   onReview?: (order: ShopOrder) => void;
+  onConfirmReceived?: (order: ShopOrder) => void;
+  isConfirming?: boolean;
 };
 
 const statusMeta = (order: ShopOrder) => {
-  if (order.status === "paid") return { label: "Paid", color: "green" as const };
+  if (order.status === "processing") return { label: "Processing", color: "blue" as const };
+  if (order.status === "on_the_way") return { label: "On The Way", color: "cyan" as const };
+  if (order.status === "delivered") return { label: "Delivered", color: "purple" as const };
   if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
   if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
-  return { label: "Awaiting payment", color: "gold" as const };
+  return { label: "Pending", color: "gold" as const };
 };
 
-const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalProps) => {
+const OrderDetailModal = ({ open, order, onClose, onReview, onConfirmReceived, isConfirming }: OrderDetailModalProps) => {
   if (!order) return null;
   const status = statusMeta(order);
 
@@ -34,9 +38,9 @@ const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalPr
       title={null}
     >
       <div className="pt-1">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 pr-2">
         <p className="mb-1 text-xs uppercase tracking-[0.16em] text-[#BF8D2F]">Order details</p>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-serif text-2xl font-bold text-[#1A1A1A]">#{order.orderNumber}</h3>
+          {/* <h3 className="font-serif text-2xl font-bold text-[#1A1A1A]">#{order.orderNumber}</h3> */}
           <Tag color={status.color}>{status.label}</Tag>
         </div>
 
@@ -46,10 +50,10 @@ const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalPr
             <p className="mt-1 font-medium text-[#1A1A1A]">
               {order.createdAt
                 ? new Date(order.createdAt).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
                 : "—"}
             </p>
           </div>
@@ -62,7 +66,7 @@ const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalPr
           <div>
             <p className="text-[11px] uppercase tracking-[0.12em] text-neutral-400">Delivery</p>
             <p className="mt-1 font-medium text-[#1A1A1A]">
-              {order.deliveryType === "paid_delivery" ? "Paid Delivery" : "Case In Delivery"}
+              {order.deliveryType === "standard" ? "Standard Delivery" : order.deliveryType === "express" ? "Express Delivery" : "—"}
               {order.deliveryFee ? ` · £${Number(order.deliveryFee).toFixed(2)}` : ""}
             </p>
           </div>
@@ -77,6 +81,34 @@ const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalPr
             <p className="mt-1 leading-relaxed text-[#1A1A1A]">{order.customer.location}</p>
           </div>
         </div>
+
+        {order.shippingInfo && (
+          <div className="mb-5 rounded-lg border border-[#EDEDED] bg-[#FAFAF8] p-4 text-sm">
+            <h4 className="font-semibold text-gray-700 mb-2">Shipping Information</h4>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-neutral-400">Company</p>
+                <p className="mt-1 font-medium text-[#1A1A1A]">{order.shippingInfo.company}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-neutral-400">Tracking ID</p>
+                <p className="mt-1 font-medium text-[#1A1A1A]">{order.shippingInfo.trackingId}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-neutral-400">Shipping Date</p>
+                <p className="mt-1 font-medium text-[#1A1A1A]">
+                  {new Date(order.shippingInfo.shippingDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.12em] text-neutral-400">Est. Delivery Date</p>
+                <p className="mt-1 font-medium text-[#1A1A1A]">
+                  {new Date(order.shippingInfo.estimatedDeliveryDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.14em] text-neutral-400">
           Items
@@ -113,7 +145,7 @@ const OrderDetailModal = ({ open, order, onClose, onReview }: OrderDetailModalPr
           >
             Close
           </button>
-          {onReview ? (
+          {onReview && order.status === "delivered" ? (
             <button
               type="button"
               onClick={() => onReview(order)}

@@ -30,11 +30,7 @@ const infoLinks = [
   { label: "Shipping Policy", href: "/shippingpolicy" },
 ];
 
-const socialLinks = [
-  { icon: FaInstagram, href: "https://instagram.com" },
-  { icon: FaFacebookF, href: "https://facebook.com" },
-  { icon: FaXTwitter, href: "https://x.com" },
-];
+
 
 const FooterColumn = ({
   title,
@@ -81,20 +77,9 @@ const Footer = () => {
                 />
               </Link>
               <p className="text-[10px] md:text-[16px] lg:text-[18px] text-gray-500 leading-relaxed mb-5 max-w-xs">
-                Be the first to discover our latest arrivals, exclusive releases, and members-only offers. Thoughtfully curated updates, delivered to your inbox—never more than twice a month. No spam, ever.
+                Be the first to discover our latest arrivals, exclusive releases, and members only offers. Thoughtfully curated updates, delivered straight to your inbox never more than twice a month. Get early access to new collections, exclusive offers, and brand highlights.
+
               </p>
-              <div className="flex items-center  gap-3">
-                {socialLinks.map(({ icon: Icon, href }, idx) => (
-                  <Link
-                    key={idx}
-                    href={href}
-                    target="_blank"
-                    className="w-9 h-9 flex items-center justify-center rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <Icon className="text-[10px] md:text-[16px] lg:text-[18px]" />
-                  </Link>
-                ))}
-              </div>
             </div>
 
             {/* Link Columns */}
@@ -108,14 +93,14 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-200">
-          <div className=" py-5 flex flex-col lg:flex-row items-center justify-between gap-3">
-            <p className="text-[10px]  lg:text-[16px]  text-gray-500 text-center md:text-left">
-              © 2022 SMKR All rights reserved. Registered in England & Wales.
+          <div className="py-5 flex flex-col lg:flex-row items-center justify-between gap-3">
+            <p className="text-[8px] lg:text-[12px] text-gray-500 text-center md:text-left">
+              © 2026 British Smokes All rights reserved. Registered in England & Wales.
             </p>
-            <p className="text-[10px] lg:text-[16px]  text-gray-500 text-center md:text-right flex items-center gap-1">
+            <p className="text-[8px] lg:text-[12px] text-gray-500 text-center md:text-right flex items-center gap-1">
               <span className="text-amber-500">⚠</span>
               SMOKING KILLS Tobacco products are harmful to your health and
-              are addictive. For adults only. 18+ only.
+              are addictive. For adults only.
             </p>
           </div>
         </div>

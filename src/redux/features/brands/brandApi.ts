@@ -94,6 +94,13 @@ const brandApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["brand"],
     }),
+    deleteBrand: builder.mutation<BrandResponse, string>({
+      query: (id) => ({
+        url: `/admin/brands/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["brand"],
+    }),
   }),
 });
 
@@ -102,4 +109,5 @@ export const {
   useGetAdminBrandsQuery,
   useCreateBrandMutation,
   useUpdateBrandMutation,
+  useDeleteBrandMutation,
 } = brandApi;

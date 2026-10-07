@@ -8,7 +8,7 @@ const TopNav = () => {
   if (!isVisible) return null;
 
   const messages = [
-    "Free delivery on orders over £40",
+    "Free delivery on orders over £200",
     "New Collection: Reserve Selection",
     "Exclusive membership now available",
   ];

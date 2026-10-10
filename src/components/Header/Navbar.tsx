@@ -4,8 +4,8 @@ import logo from "@/assets/logo/logo.png";
 import Image from "next/image";
 import ActiveLink from "./ActiveLink"; // Assuming this component works fine
 import Link from "next/link";
-import { Drawer, Button, } from "antd";
-import { MenuOutlined } from "@ant-design/icons";
+import { Drawer, Button, Dropdown, MenuProps } from "antd";
+import { MenuOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { logout, selectCurrentUser, selectToken } from "@/redux/features/auth/authSlice";
@@ -17,11 +17,13 @@ import { useGetWishlistIdsQuery } from "@/redux/features/wishlist/wishlistApi";
 import { useGetCartQuery, useUpdateCartQtyMutation } from "@/redux/features/cart/cartApi";
 import { resolveMediaUrl } from "@/utils/media";
 import { isAdminRole } from "@/utils/role";
+import { useGetCategoriesQuery } from "@/redux/features/category/categoryApi";
+import { isProductCategory } from "@/constants/productAttributes";
 
 const navLink = [
   { href: "/cigarettes", label: "Cigarettes" },
   { href: "/cigars", label: "Cigars" },
-  { href: "/tobacco", label: "Tobacco" },
+  { href: "/ryo", label: "RYO" },
   { href: "/accessories", label: "Accessories" },
   { href: "/brands", label: "Brands" },
   { href: "/newarrivals", label: "New Arrivals" },
@@ -44,6 +46,7 @@ const Navbar = () => {
     refetchOnMountOrArgChange: true,
     refetchOnFocus: true,
   });
+  const { data: categoryData } = useGetCategoriesQuery();
   const [updateCartQty] = useUpdateCartQtyMutation();
   const profile = data?.data || cookieUser;
   const wishlistIds = token ? wishlistIdsData?.data ?? [] : [];
@@ -83,21 +86,41 @@ const Navbar = () => {
     await updateCartQty({ productId: id, qty: item.qty + delta });
   };
 
+  const categories = (categoryData?.data || []).filter((item) =>
+    isProductCategory(item.name)
+  );
+
+  const categoryItems: MenuProps["items"] = categories.map((cat) => ({
+    key: cat.id,
+    label: (
+      <Link href={`/searchresult?category=${encodeURIComponent(cat.name)}`}>
+        {cat.name}
+      </Link>
+    ),
+  }));
+
   return (
     <nav className="border-b border-[#E5E5E5] shadow-[0px_4px_16px_0px_#00000026]">
       <div className="xl:container mx-auto flex justify-between items-center py-2.5 px-2 xl:px-0">
         {/* Logo + Brand name */}
-        <Link href="/" className="flex items-center shrink-0">
-          <Image
-            src={logo}
-            alt="British Smokes"
-            width={360}
-            height={100}
-            quality={100}
-            priority
-            className="h-10 w-auto max-w-[180px] object-contain object-left md::h-11 md:max-w-[220px] md:h-12 md:max-w-[260px] xl:h-[52px] xl:max-w-[300px]"
-          />
-        </Link>
+        <div className="flex items-center shrink-0 gap-4">
+          <Link href="/" className="flex items-center shrink-0">
+            <Image
+              src={logo}
+              alt="British Smokes"
+              width={360}
+              height={100}
+              quality={100}
+              priority
+              className="h-10 w-auto max-w-[180px] object-contain object-left md::h-11 md:max-w-[220px] md:h-12 md:max-w-[260px] xl:h-[52px] xl:max-w-[300px]"
+            />
+          </Link>
+          <Dropdown menu={{ items: categoryItems }} placement="bottomLeft">
+            <div className="cursor-pointer flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 transition-colors xl:mt-4">
+              <UnorderedListOutlined className="text-xl text-gray-700" />
+            </div>
+          </Dropdown>
+        </div>
 
         {/* Desktop Navigation Links */}
         <ul className="hidden lg:flex items-center gap-2 xl:gap-6 -mb-1">

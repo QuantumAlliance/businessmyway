@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Spin, Tag } from "antd";
+import { Spin, Tag, Table } from "antd";
 import { FiBox, FiShoppingBag, FiUser, FiTrendingUp } from "react-icons/fi";
 import { useAppSelector } from "@/redux/hooks";
 import { selectCurrentUser, selectToken } from "@/redux/features/auth/authSlice";
@@ -42,8 +42,8 @@ const AdminDashboardPage = () => {
   const adminName = profileData?.data?.name || cookieUser?.name || "Admin";
   const { data, isLoading } = useGetAdminDashboardStatsQuery();
   const stats = data?.data;
-  const recentOrders = (stats?.recentOrders || []).slice(0, RECENT_LIMIT);
-  const recentUsers = (stats?.recentUsers || []).slice(0, RECENT_LIMIT);
+  const recentOrders = [...(stats?.recentOrders || [])].reverse().slice(0, RECENT_LIMIT);
+  const recentUsers = [...(stats?.recentUsers || [])].reverse().slice(0, RECENT_LIMIT);
 
   const cards = [
     {
@@ -115,50 +115,81 @@ const AdminDashboardPage = () => {
                 </Link>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-[#F6F3EE] text-xs font-semibold uppercase tracking-[0.06em] text-[#5C564C]">
-                    <tr>
-                      <th className="px-5 py-3">Order</th>
-                      <th className="px-5 py-3">Customer</th>
-                      <th className="px-5 py-3">Date</th>
-                      <th className="px-5 py-3 text-right">Total</th>
-                      <th className="px-5 py-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-5 py-10 text-center text-sm text-[#8A8174]">
-                          No orders yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      recentOrders.map((order) => {
-                        const status = orderStatus(order);
-                        return (
-                          <tr key={order.id} className="border-t border-[#F0EAE2]">
-                            <td className="whitespace-nowrap px-5 py-3 font-semibold">
-                              #{order.orderNumber}
-                            </td>
-                            <td className="px-5 py-3">
-                              <p className="font-medium">{order.customer.name}</p>
-                              <p className="text-xs text-[#8A8174]">{order.customer.email}</p>
-                            </td>
-                            <td className="whitespace-nowrap px-5 py-3 text-[#8A8174]">
-                              {formatDate(order.createdAt)}
-                            </td>
-                            <td className="whitespace-nowrap px-5 py-3 text-right font-bold text-[#BF8D2F]">
-                              {formatMoney(order.total ?? order.subtotal)}
-                            </td>
-                            <td className="px-5 py-3">
-                              <Tag color={status.color}>{status.label}</Tag>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+                <Table
+                  rowKey="id"
+                  columns={[
+                    {
+                      title: "Customer",
+                      key: "customer",
+                      render: (_, order) => (
+                        <>
+                          <p className="font-medium">{order.customer.name}</p>
+                          {/* <p className="text-xs text-[#8A8174]">{order.customer.email}</p> */}
+                        </>
+                      ),
+                    },
+                    {
+                      title: "Items",
+                      dataIndex: "items",
+                      key: "items",
+                      render: (items: ShopOrder["items"]) => {
+                        const totalItems = (items || []).reduce((sum, item) => sum + item.qty, 0);
+                        return `${totalItems} ${totalItems === 1 ? 'item' : 'items'}`;
+                      },
+                    },
+                    {
+                      title: "Delivery Type",
+                      dataIndex: "deliveryType",
+                      key: "deliveryType",
+                      render: (type?: string) => {
+                        if (!type) return "—";
+                        if (type === "standard") return "Standard Delivery";
+                        if (type === "express") return "Express Delivery";
+                        return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
+                      },
+                    },
+                    {
+                      title: "Ordere Date",
+                      dataIndex: "createdAt",
+                      key: "createdAt",
+                      render: (value?: string) => formatDate(value),
+                    },
+                    {
+                      title: "Amount",
+                      dataIndex: "subtotal",
+                      key: "subtotal",
+                      align: "right",
+                      render: (_, order) => (
+                        <span className="font-bold text-[#BF8D2F]">{formatMoney(order.total ?? order.subtotal)}</span>
+                      ),
+                    },
+                    {
+                      title: "Status",
+                      key: "status",
+                      render: (_, order) => {
+                        const labels: Record<string, string> = {
+                          pending: "Pending",
+                          processing: "Processing",
+                          on_the_way: "On The Way",
+                          delivered: "Delivered",
+                          cancelled: "Cancelled",
+                        };
+                        const colors: Record<string, string> = {
+                          pending: "gold",
+                          processing: "blue",
+                          on_the_way: "cyan",
+                          delivered: "purple",
+                          cancelled: "default",
+                        };
+                        return <Tag color={colors[order.status] || "gold"}>{labels[order.status] || order.status}</Tag>;
+                      },
+                    },
+                  ]}
+                  dataSource={recentOrders}
+                  pagination={false}
+                  scroll={{ x: 600 }}
+                  locale={{ emptyText: "No orders yet." }}
+                />
               </div>
             </section>
 

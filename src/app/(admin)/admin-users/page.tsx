@@ -368,7 +368,7 @@ function AdminUsersPage() {
         onCancel={() => setPreviewUser(null)}
         footer={null}
         centered
-        destroyOnHidden
+        forceRender
         width={720}
         title={previewUser ? `${formatDocumentType(previewUser.identityDocumentType)} — ${previewUser.name}` : "ID Document"}
       >

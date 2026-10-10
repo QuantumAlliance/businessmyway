@@ -115,14 +115,6 @@ const EditAddressPage = () => {
     }
   };
 
-  if (isLoadingProfile) {
-    return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <Spin />
-      </div>
-    );
-  }
-
   return (
     <div className="py-8">
       <div className="mb-6 flex items-center justify-between">
@@ -132,7 +124,13 @@ const EditAddressPage = () => {
         </h1>
       </div>
 
-      <div className="max-w-3xl rounded-md border border-gray-300 p-6 bg-white">
+      {isLoadingProfile && (
+        <div className="flex min-h-[300px] items-center justify-center">
+          <Spin />
+        </div>
+      )}
+
+      <div className={`max-w-3xl rounded-md border border-gray-300 p-6 bg-white ${isLoadingProfile ? 'hidden' : 'block'}`}>
         <ConfigProvider theme={{ token: { colorPrimary: "#C1892F" } }}>
           <Form
             form={form}
@@ -187,7 +185,7 @@ const EditAddressPage = () => {
                 onChange={(val, opt: any) => {
                   setCountryIso(opt.isoCode);
                   setStateIso("");
-                  form.setFieldsValue({ province: undefined, city: undefined });
+                  form.setFieldsValue({ province: undefined });
                 }}
               />
             </Form.Item>
@@ -202,7 +200,6 @@ const EditAddressPage = () => {
                 filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                 onChange={(val, opt: any) => {
                   setStateIso(opt.isoCode);
-                  form.setFieldsValue({ city: undefined });
                 }}
               />
             </Form.Item>

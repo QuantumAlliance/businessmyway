@@ -239,7 +239,7 @@ const BrandsPage = () => {
         onCancel={closeModal}
         footer={null}
         centered
-        destroyOnHidden
+        forceRender
         title={editingBrand ? "Edit Brand" : "Add Brand"}
       >
         <Form

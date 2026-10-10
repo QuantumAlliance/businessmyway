@@ -6,7 +6,7 @@ import Image from "next/image";
 const shopLinks = [
   { label: "Cigarettes", href: "/cigarettes" },
   { label: "Cigars", href: "/cigars" },
-  { label: "Pipe Tobacco", href: "/tobacco" },
+  { label: "RYO", href: "/ryo" },
   { label: "search result", href: "/searchresult" },
   { label: "Accessories", href: "/accessories" },
   { label: "New Arrivals", href: "/newarrivals" },

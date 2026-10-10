@@ -300,6 +300,10 @@ const CheckoutPage = () => {
     let province = "";
     let country = "";
     let postcode = "";
+    let streetNumber = "";
+    let route = "";
+    let premise = "";
+    let subpremise = "";
 
     place.address_components?.forEach((component: any) => {
       const types = component.types;
@@ -316,25 +320,52 @@ const CheckoutPage = () => {
       if (types.includes("postal_code")) {
         postcode = component.long_name;
       }
+      if (types.includes("street_number")) {
+        streetNumber = component.long_name;
+      }
+      if (types.includes("route")) {
+        route = component.long_name;
+      }
+      if (types.includes("premise")) {
+        premise = component.long_name;
+      }
+      if (types.includes("subpremise")) {
+        subpremise = component.long_name;
+      }
     });
 
-    // ⭐ আপডেট করা হয়েছে: শুধুমাত্র শহর, প্রদেশ এবং জিপকোড কমা দিয়ে যুক্ত হবে
-    const address = [city, province, postcode].filter(Boolean).join(", ");
+    const streetAddressParts = [premise, subpremise, streetNumber, route].filter(Boolean);
+    const address = streetAddressParts.length > 0 ? streetAddressParts.join(" ") : place.name || "";
 
-    const cIso = Country.getAllCountries().find(x => x.name === country)?.isoCode || "";
+    const countryObj = Country.getAllCountries().find(x => x.name.toLowerCase() === country.toLowerCase() || x.isoCode.toLowerCase() === country.toLowerCase());
+    const cIso = countryObj?.isoCode || "";
     setCountryIso(cIso);
+    
     if (cIso && province) {
-      const pIso = State.getStatesOfCountry(cIso).find(x => x.name === province)?.isoCode || "";
-      setStateIso(pIso);
+      const stateObj = State.getStatesOfCountry(cIso).find(x => x.name.toLowerCase() === province.toLowerCase() || x.isoCode.toLowerCase() === province.toLowerCase());
+      if (stateObj) {
+        setStateIso(stateObj.isoCode);
+        province = stateObj.name;
+      } else {
+        setStateIso("");
+      }
     } else {
       setStateIso("");
     }
 
+    if (city && cIso) {
+      const stateToUse = State.getStatesOfCountry(cIso).find(x => x.name.toLowerCase() === province.toLowerCase() || x.isoCode.toLowerCase() === province.toLowerCase())?.isoCode || "";
+      const cityObj = City.getCitiesOfState(cIso, stateToUse).find(x => x.name.toLowerCase() === city.toLowerCase());
+      if (cityObj) {
+        city = cityObj.name;
+      }
+    }
+
     form.setFieldsValue({
-      address, // মেইন অ্যাড্রেস ইনপুটে শহর, রাজ্য এবং জিপকোড বসবে
+      address, 
       city,
       province: province || undefined,
-      country: country || undefined,
+      country: countryObj?.name || country || undefined,
       postcode,
     });
   };
@@ -433,7 +464,7 @@ const CheckoutPage = () => {
                   onChange={(val, opt: any) => {
                     setCountryIso(opt.isoCode);
                     setStateIso("");
-                    form.setFieldsValue({ province: undefined, city: undefined });
+                    form.setFieldsValue({ province: undefined });
                   }}
                 />
               </Form.Item>
@@ -447,7 +478,6 @@ const CheckoutPage = () => {
                   filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                   onChange={(val, opt: any) => {
                     setStateIso(opt.isoCode);
-                    form.setFieldsValue({ city: undefined });
                   }}
                 />
               </Form.Item>

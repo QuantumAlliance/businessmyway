@@ -17,7 +17,6 @@ const AdminOrdersPage = () => {
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
   const [form] = Form.useForm();
-  const statusWatch = Form.useWatch('status', form);
 
   const handleViewDetails = (order: ShopOrder) => {
     setSelectedOrder(order);
@@ -194,7 +193,7 @@ const AdminOrdersPage = () => {
         open={isUpdateModalVisible}
         onCancel={() => setIsUpdateModalVisible(false)}
         footer={null}
-        destroyOnClose
+        forceRender
       >
         <Form form={form} layout="vertical" onFinish={handleApproveSubmit} className="mt-4">
           <div className="p-4 bg-gray-50 rounded-lg space-y-2 border">

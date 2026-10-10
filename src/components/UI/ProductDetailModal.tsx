@@ -73,7 +73,7 @@ const ProductDetailModal = ({ open, product, onClose }: ProductDetailModalProps)
       footer={null}
       centered
       width={1000}
-      destroyOnHidden
+      forceRender
       className="product-detail-modal"
       styles={{
         body: { padding: 0 },

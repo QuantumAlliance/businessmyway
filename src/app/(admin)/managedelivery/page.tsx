@@ -87,11 +87,7 @@ const ManageDeliveryPage = () => {
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center rounded-2xl border border-[#E8E0D4] bg-white">
-          <Spin size="large" />
-        </div>
-      ) : (
+      <div className={isLoading ? "hidden" : "block"}>
         <Form
           form={form}
           layout="vertical"
@@ -238,6 +234,11 @@ const ManageDeliveryPage = () => {
             </button>
           </div>
         </Form>
+      </div>
+      {isLoading && (
+        <div className="flex h-64 items-center justify-center rounded-2xl border border-[#E8E0D4] bg-white">
+          <Spin size="large" />
+        </div>
       )}
     </div>
   );

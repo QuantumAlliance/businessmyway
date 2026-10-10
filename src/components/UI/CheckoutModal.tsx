@@ -144,7 +144,7 @@ const CheckoutModal = ({ open, onClose, cartItems, onCartCleared }: CheckoutModa
       onCancel={onClose}
       footer={null}
       width={920}
-      destroyOnHidden
+      forceRender
       centered
       title={null}
       className="checkout-modal"

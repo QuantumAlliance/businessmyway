@@ -146,7 +146,7 @@ const AddAddressPage = () => {
                 onChange={(val, opt: any) => {
                   setCountryIso(opt.isoCode);
                   setStateIso("");
-                  form.setFieldsValue({ province: undefined, city: undefined });
+                  form.setFieldsValue({ province: undefined });
                 }}
               />
             </Form.Item>
@@ -161,7 +161,6 @@ const AddAddressPage = () => {
                 filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                 onChange={(val, opt: any) => {
                   setStateIso(opt.isoCode);
-                  form.setFieldsValue({ city: undefined });
                 }}
               />
             </Form.Item>

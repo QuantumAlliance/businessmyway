@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spin } from "antd";
 import Pagination from "@/components/UI/Pagination";
 import SearchResultCard from "./SearchResultCard";
@@ -21,11 +21,12 @@ type SortValue = (typeof sortOptions)[number]["value"];
 
 const RESULTS_PER_PAGE = 12;
 
-const SearchResult = ({ onClose }: { onClose?: () => void }) => {
+const SearchResultContent = ({ onClose }: { onClose?: () => void }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState(searchParams.get("category") || "");
   const [sortBy, setSortBy] = useState<SortValue>("bestSelling");
   const [sortOpen, setSortOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,6 +61,14 @@ const SearchResult = ({ onClose }: { onClose?: () => void }) => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const catParam = searchParams.get("category");
+    if (catParam !== null) {
+      setCategory(catParam);
+      setCurrentPage(1);
+    }
+  }, [searchParams]);
 
   const runSearch = (term: string) => {
     const next = term.trim();
@@ -224,6 +233,14 @@ const SearchResult = ({ onClose }: { onClose?: () => void }) => {
           </div>
       </div>
     </div>
+  );
+};
+
+const SearchResult = (props: { onClose?: () => void }) => {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SearchResultContent {...props} />
+    </Suspense>
   );
 };
 

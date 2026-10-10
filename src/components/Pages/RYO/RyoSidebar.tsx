@@ -21,6 +21,10 @@ const filterData = {
     { label: '100g', count: 56 },
     { label: '250g', count: 56 },
   ],
+  Strength: [
+    { label: 'Medium', count: 56 },
+    { label: 'Extra Strong', count: 56 },
+  ],
   Brand: [
     { label: 'Davidoff', count: 56 },
     { label: 'Marlboro', count: 56 },
@@ -28,7 +32,7 @@ const filterData = {
   ],
 };
 
-const TobaccoSidebar = ({ filters, onFilterChange, onPriceChange, onApply, onReset }: any) => {
+const RyoSidebar = ({ filters, onFilterChange, onPriceChange, onApply, onReset }: any) => {
   const renderGroup = (title: string, items: { label: string; count: number }[]) => (
     <div key={title} className="mb-6">
       <h3 className="font-semibold text-gray-900 mb-3">{title}</h3>
@@ -56,11 +60,12 @@ const TobaccoSidebar = ({ filters, onFilterChange, onPriceChange, onApply, onRes
 
   return (
     <aside className="w-full lg:w-64 shrink-0 text-sm text-gray-700">
-      <p className="text-gray-400 mb-4">Home / Tobacco</p>
+      <p className="text-gray-400 mb-4">Home / RYO</p>
 
       {renderGroup('Type', filterData.Type)}
       {renderGroup('Leaf Origin', filterData['Leaf Origin'])}
       {renderGroup('Weight', filterData.Weight)}
+      {renderGroup('Strength', filterData.Strength)}
       {renderGroup('Brand', filterData.Brand)}
 
       {/* Price Range */}
@@ -103,4 +108,4 @@ const TobaccoSidebar = ({ filters, onFilterChange, onPriceChange, onApply, onRes
   );
 };
 
-export default TobaccoSidebar;
+export default RyoSidebar;

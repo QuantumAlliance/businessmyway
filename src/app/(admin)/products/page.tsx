@@ -383,7 +383,7 @@ const ProductsPage = () => {
         onCancel={closeModal}
         footer={null}
         centered
-        destroyOnHidden
+        forceRender
         width={720}
         title={editingProduct ? "Edit Product" : "Add New Product"}
       >

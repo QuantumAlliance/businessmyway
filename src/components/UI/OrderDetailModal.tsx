@@ -33,7 +33,7 @@ const OrderDetailModal = ({ open, order, onClose, onReview, onConfirmReceived, i
       onCancel={onClose}
       footer={null}
       centered
-      destroyOnHidden
+      forceRender
       width={640}
       title={null}
     >

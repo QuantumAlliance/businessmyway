@@ -12,6 +12,7 @@ import {
   type Category,
 } from "@/redux/features/category/categoryApi";
 import { isLockedCategoryName } from "@/constants/lockedCategories";
+import { CloudCog } from "lucide-react";
 
 type CategoryFormValues = {
   name: string;
@@ -26,6 +27,7 @@ const CategoryPage = () => {
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const categories = data?.data || [];
+  
   const isSaving = isCreating || isUpdating;
 
   const isLocked = (category: Category) =>
@@ -90,7 +92,7 @@ const CategoryPage = () => {
       if (isLockedCategoryName(name)) {
         Swal.fire({
           title: "Locked",
-          text: "Cigarettes, Cigars, Tobacco and Accessories cannot be added or renamed.",
+          text: "Cigarettes, Cigars, RYO and Accessories cannot be added or renamed.",
           icon: "info",
         });
         return;
@@ -128,7 +130,7 @@ const CategoryPage = () => {
         <div>
           <h2 className="text-2xl font-semibold">Category</h2>
           <p className="text-sm text-[#8A8174]">
-            Accessories, Tobacco, Cigars and Cigarettes are fixed. New categories can be added, edited and deleted.
+            Accessories, RYO, Cigars and Cigarettes are fixed. New categories can be added, edited and deleted.
           </p>
         </div>
         <button
@@ -200,7 +202,7 @@ const CategoryPage = () => {
         onCancel={closeModal}
         footer={null}
         centered
-        destroyOnHidden
+        forceRender
         title={editingCategory ? "Edit Category" : "Add Category"}
       >
         <Form

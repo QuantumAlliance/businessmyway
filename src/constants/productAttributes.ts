@@ -36,21 +36,16 @@ export const PRODUCT_ATTRIBUTE_SCHEMA: Record<string, ProductAttributeField[]> =
       options: ["Natural", "Claro", "Colorado", "Maduro"],
     },
   ],
-  tobacco: [
-    {
-      key: "type",
-      label: "Type",
-      options: ["Pipe Tobacco", "Rolling Tobacco", "Loose Leaf", "Shisha"],
-    },
+  ryo: [
     {
       key: "leafOrigin",
       label: "Leaf Origin",
       options: ["Virginia", "Burley", "Oriental", "Latakia"],
     },
     {
-      key: "weight",
-      label: "Weight",
-      options: ["25g", "50g", "100g", "250g"],
+      key: "strength",
+      label: "Strength",
+      options: ["Medium", "Extra Strong"],
     },
   ],
   accessories: [

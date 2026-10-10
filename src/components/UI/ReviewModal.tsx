@@ -40,7 +40,7 @@ const ReviewModal = ({ open, onClose, order }: ReviewModalProps) => {
       onCancel={onClose}
       footer={null}
       centered
-      destroyOnHidden
+      forceRender
       width={480}
       title={null}
       styles={{ body: { padding: 0 } }}

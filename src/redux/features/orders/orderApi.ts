@@ -27,7 +27,7 @@ export type ShippingInfo = {
 export type ShopOrder = {
   id: string;
   orderNumber: string;
-  status: "pending"  | "processing" | "on_the_way" | "delivered" | "cancelled";
+  status: "pending" | "on_the_way" | "delivered";
   deliveryType?: "standard" | "express" | "free_delivery" | "in_delivery" | "paid_delivery" | string;
   deliveryFee?: number;
   subtotal: number;
@@ -35,6 +35,7 @@ export type ShopOrder = {
   items: OrderItem[];
   customer: OrderCustomer;
   shippingInfo?: ShippingInfo;
+  invoice?: string;
   paidAt?: string;
   createdAt?: string;
 };
@@ -74,8 +75,9 @@ type OrderListResponse = {
 
 type UpdateOrderStatusPayload = {
   id: string;
-  status: "pending"  | "processing" | "on_the_way" | "delivered" | "cancelled";
+  status: "pending" | "on_the_way" | "delivered";
   shippingInfo?: ShippingInfo;
+  invoice?: string;
 };
 
 const orderApi = baseApi.injectEndpoints({
@@ -112,10 +114,25 @@ const orderApi = baseApi.injectEndpoints({
       providesTags: ["order"],
     }),
     updateAdminOrderStatus: builder.mutation<OrderResponse, UpdateOrderStatusPayload>({
-      query: ({ id, status, shippingInfo }) => ({
+      query: ({ id, status, shippingInfo, invoice }) => ({
         url: `/admin/orders/${id}/status`,
         method: "PATCH",
-        body: { status, shippingInfo },
+        body: { status, shippingInfo, invoice },
+      }),
+      invalidatesTags: ["order"],
+    }),
+    uploadAdminOrderInvoice: builder.mutation<OrderResponse, { id: string; formData: FormData }>({
+      query: ({ id, formData }) => ({
+        url: `/admin/orders/${id}/invoice`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["order"],
+    }),
+    deleteAdminOrderInvoice: builder.mutation<OrderResponse, string>({
+      query: (id) => ({
+        url: `/admin/orders/${id}/invoice`,
+        method: "DELETE",
       }),
       invalidatesTags: ["order"],
     }),
@@ -136,5 +153,7 @@ export const {
   useGetOrdersQuery,
   useGetAdminOrdersQuery,
   useUpdateAdminOrderStatusMutation,
+  useUploadAdminOrderInvoiceMutation,
+  useDeleteAdminOrderInvoiceMutation,
   useConfirmOrderReceivedMutation,
 } = orderApi;

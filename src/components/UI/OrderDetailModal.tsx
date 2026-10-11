@@ -4,6 +4,8 @@ import { Modal, Tag } from "antd";
 import type { ShopOrder } from "@/redux/features/orders/orderApi";
 import ProductPhoto from "@/components/UI/ProductPhoto";
 import { resolveMediaUrl } from "@/utils/media";
+import { FaFilePdf } from "react-icons/fa";
+import { downloadInvoicePdf } from "@/utils/invoice";
 
 type OrderDetailModalProps = {
   open: boolean;
@@ -15,11 +17,8 @@ type OrderDetailModalProps = {
 };
 
 const statusMeta = (order: ShopOrder) => {
-  if (order.status === "processing") return { label: "Processing", color: "blue" as const };
   if (order.status === "on_the_way") return { label: "On The Way", color: "cyan" as const };
   if (order.status === "delivered") return { label: "Delivered", color: "purple" as const };
-  if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
-  if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
   return { label: "Pending", color: "gold" as const };
 };
 
@@ -138,6 +137,16 @@ const OrderDetailModal = ({ open, order, onClose, onReview, onConfirmReceived, i
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
+          {order.invoice || order.status !== "pending" ? (
+            <button
+              type="button"
+              onClick={() => downloadInvoicePdf(order)}
+              className="inline-flex items-center gap-1.5 rounded-sm border border-red-200 bg-red-50 px-3.5 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 hover:border-red-300"
+            >
+              <FaFilePdf size={16} />
+              <span>Download Invoice</span>
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={onClose}

@@ -1,16 +1,23 @@
 "use client";
 
-import { Table, Tag, Modal, Button, Select, Form, Input, DatePicker, message } from "antd";
+import { Table, Tag, Modal, Button, Form, Input, DatePicker, message, Tooltip } from "antd";
 import { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
-import { useGetAdminOrdersQuery, useUpdateAdminOrderStatusMutation, type ShopOrder } from "@/redux/features/orders/orderApi";
+import {
+  useGetAdminOrdersQuery,
+  useUpdateAdminOrderStatusMutation,
+  useUploadAdminOrderInvoiceMutation,
+  type ShopOrder,
+} from "@/redux/features/orders/orderApi";
 import { IoMdInformationCircleOutline } from "react-icons/io";
-import dayjs from 'dayjs';
+import { FaFilePdf } from "react-icons/fa";
 import OrderDetailModal from "@/components/UI/OrderDetailModal";
+import { downloadInvoicePdf, generateInvoicePdfBlob } from "@/utils/invoice";
 
 const AdminOrdersPage = () => {
   const { data, isLoading } = useGetAdminOrdersQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateAdminOrderStatusMutation();
+  const [uploadInvoice, { isLoading: isUploadingInvoice }] = useUploadAdminOrderInvoiceMutation();
   const orders = [...(data?.data || [])].reverse();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -32,6 +39,21 @@ const AdminOrdersPage = () => {
   const handleApproveSubmit = async (values: any) => {
     if (!selectedOrder) return;
     try {
+      // Auto-generate the invoice PDF and upload/attach it to the order
+      let invoiceUrl = selectedOrder.invoice;
+      try {
+        const blob = generateInvoicePdfBlob(selectedOrder);
+        const file = new File([blob], `Invoice-${selectedOrder.orderNumber}.pdf`, { type: "application/pdf" });
+        const formData = new FormData();
+        formData.append("invoice", file);
+        const res = await uploadInvoice({ id: selectedOrder.id, formData }).unwrap();
+        if (res?.data?.invoice) {
+          invoiceUrl = res.data.invoice;
+        }
+      } catch (invoiceErr) {
+        console.error("Auto-generating invoice failed:", invoiceErr);
+      }
+
       const payload: any = {
         id: selectedOrder.id,
         status: 'on_the_way',
@@ -40,11 +62,12 @@ const AdminOrdersPage = () => {
           trackingId: values.trackingId,
           shippingDate: values.shippingDate.toISOString(),
           estimatedDeliveryDate: values.estimatedDeliveryDate.toISOString(),
-        }
+        },
+        ...(invoiceUrl ? { invoice: invoiceUrl } : {}),
       };
 
       await updateStatus(payload).unwrap();
-      message.success('Order approved and status updated to On The Way');
+      message.success('Order approved and invoice PDF generated successfully');
       setIsUpdateModalVisible(false);
     } catch (err: any) {
       message.error(err?.data?.message || 'Failed to approve order');
@@ -100,17 +123,13 @@ const AdminOrdersPage = () => {
       render: (_status: ShopOrder["status"], order: ShopOrder) => {
         const labels: Record<string, string> = {
           pending: "Pending",
-          processing: "Processing",
           on_the_way: "On The Way",
           delivered: "Delivered",
-          cancelled: "Cancelled",
         };
         const colors: Record<string, string> = {
           pending: "gold",
-          processing: "blue",
           on_the_way: "cyan",
           delivered: "purple",
-          cancelled: "default",
         };
         return <Tag color={colors[order.status] || "gold"}>{labels[order.status] || order.status}</Tag>;
       },
@@ -125,7 +144,7 @@ const AdminOrdersPage = () => {
       ),
     },
         {
-      title: "Ordere Date",
+      title: "Order Date",
       dataIndex: "createdAt",
       key: "createdAt",
       render: (value?: string) =>
@@ -136,6 +155,30 @@ const AdminOrdersPage = () => {
               year: "numeric",
             })
           : "—",
+    },
+    {
+      title: "Invoice",
+      key: "invoice",
+      align: "center",
+      render: (_, order) => {
+        const isAvailable = Boolean(order.invoice || order.status !== "pending");
+        if (isAvailable) {
+          return (
+            <Tooltip title="Download Invoice (PDF)">
+              <button
+                type="button"
+                onClick={() => downloadInvoicePdf(order)}
+                className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100 hover:border-red-300 shadow-sm"
+                aria-label="Download Invoice PDF"
+              >
+                <FaFilePdf size={18} />
+              </button>
+            </Tooltip>
+          );
+        }
+
+        return <span className="font-medium text-gray-400">—</span>;
+      },
     },
      {
       title: "Order Approve",
@@ -177,7 +220,7 @@ const AdminOrdersPage = () => {
           dataSource={orders}
           loading={isLoading}
           pagination={{ pageSize: 10, hideOnSinglePage: true }}
-          scroll={{ x: 980 }}
+          scroll={{ x: 1100 }}
           locale={{ emptyText: "No orders yet." }}
         />
       </div>
@@ -214,9 +257,10 @@ const AdminOrdersPage = () => {
             </div>
           </div>
 
+
           <div className="flex justify-end gap-2 mt-6">
             <Button onClick={() => setIsUpdateModalVisible(false)}>Cancel</Button>
-            <Button type="primary" htmlType="submit" loading={isUpdating}>Approve</Button>
+            <Button type="primary" htmlType="submit" loading={isUpdating || isUploadingInvoice}>Approve</Button>
           </div>
         </Form>
       </Modal>

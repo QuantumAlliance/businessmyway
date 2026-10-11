@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { Table, Tag } from "antd";
+import { Table, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrdersQuery, useConfirmOrderReceivedMutation, type ShopOrder } from "@/redux/features/orders/orderApi";
@@ -9,7 +9,8 @@ import ReviewModal from "@/components/UI/ReviewModal";
 import OrderDetailModal from "@/components/UI/OrderDetailModal";
 import Pagination from "@/components/UI/Pagination";
 import { IoIosInformationCircleOutline } from "react-icons/io";
-import { button } from "framer-motion/client";
+import { FaFilePdf } from "react-icons/fa";
+import { downloadInvoicePdf } from "@/utils/invoice";
 
 const ORDERS_PER_PAGE = 5;
 
@@ -17,11 +18,8 @@ const truncate = (text: string, max = 36) =>
   text.length > max ? `${text.slice(0, max).trim()}…` : text;
 
 const statusMeta = (order: ShopOrder) => {
-  if (order.status === "processing") return { label: "Processing", color: "blue" as const };
   if (order.status === "on_the_way") return { label: "On The Way", color: "cyan" as const };
   if (order.status === "delivered") return { label: "Delivered", color: "purple" as const };
-  if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
-  if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
   return { label: "Pending", color: "gold" as const };
 };
 
@@ -164,7 +162,29 @@ const OrderHistoryContent = () => {
       ),
     },
     {
-
+      title: "Invoice",
+      key: "invoice",
+      align: "center",
+      render: (_, order) => {
+        const isAvailable = Boolean(order.invoice || order.status !== "pending");
+        if (!isAvailable) {
+          return <span className="font-medium text-gray-400">—</span>;
+        }
+        return (
+          <Tooltip title="Download Invoice (PDF)">
+            <button
+              type="button"
+              onClick={() => downloadInvoicePdf(order)}
+              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100 hover:border-red-300 shadow-sm"
+              aria-label="Download Invoice PDF"
+            >
+              <FaFilePdf size={18} />
+            </button>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: "Review",
       key: "total",
       align: "right",
@@ -228,7 +248,7 @@ const OrderHistoryContent = () => {
           dataSource={paginatedOrders}
           loading={isLoading}
           pagination={false}
-          scroll={{ x: 860 }}
+          scroll={{ x: 960 }}
           locale={{ emptyText: "You have not placed any orders yet." }}
         />
       </div>

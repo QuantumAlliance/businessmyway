@@ -169,17 +169,13 @@ const AdminDashboardPage = () => {
                       render: (_, order) => {
                         const labels: Record<string, string> = {
                           pending: "Pending",
-                          processing: "Processing",
                           on_the_way: "On The Way",
                           delivered: "Delivered",
-                          cancelled: "Cancelled",
                         };
                         const colors: Record<string, string> = {
                           pending: "gold",
-                          processing: "blue",
                           on_the_way: "cyan",
                           delivered: "purple",
-                          cancelled: "default",
                         };
                         return <Tag color={colors[order.status] || "gold"}>{labels[order.status] || order.status}</Tag>;
                       },

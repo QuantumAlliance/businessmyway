@@ -42,24 +42,20 @@ const HeroBannerSection = () => {
           </p>
 
           <div className="mt-2 flex w-full flex-row gap-3 py-2 md:mt-4 md:w-auto lg:mt-8">
-      <Link href="/searchresult" legacyBehavior>
-        <button
-          type="button"
-          className="flex h-10 flex-1 items-center justify-center rounded-sm bg-[#BF8D2F] px-4 font-medium text-white transition-colors hover:bg-[#a97922] md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
-        >
-          Explore Collection
-        </button>
-      </Link>
+            <Link
+              href="/searchresult"
+              className="flex h-10 flex-1 items-center justify-center rounded-sm bg-[#BF8D2F] px-4 font-medium text-white transition-colors hover:bg-[#a97922] md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
+            >
+              Explore Collection
+            </Link>
 
-      <Link href="/about-us" legacyBehavior>
-        <button
-          type="button"
-          className="flex h-10 flex-1 items-center justify-center rounded-sm border border-black bg-white px-4 font-medium text-black transition-colors hover:bg-gray-100 md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
-        >
-          Our Story
-        </button>
-      </Link>
-    </div>
+            <Link
+              href="/about-us"
+              className="flex h-10 flex-1 items-center justify-center rounded-sm border border-black bg-white px-4 font-medium text-black transition-colors hover:bg-gray-100 md:h-14 md:w-[180px] md:flex-none lg:w-[200px] xl:w-[316px]"
+            >
+              Our Story
+            </Link>
+          </div>
         </div>
       </div>
     </section>

@@ -1,15 +1,15 @@
 "use client";
 
-import { Form, Input, Checkbox, ConfigProvider } from "antd";
+import { Form, Input, Checkbox, ConfigProvider, Select, AutoComplete } from "antd";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import { useAddAddressMutation, type SavedAddressPayload } from "@/redux/features/Profile/Profile";
-import { Select } from "antd";
-import { Country, State, City } from "country-state-city";
+import { Country, State } from "country-state-city";
 import { useState, useMemo } from "react";
 import Autocomplete from "react-google-autocomplete";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { getCityOptions } from "@/constants/locations";
 
 type AddressFormValues = SavedAddressPayload;
 
@@ -18,7 +18,7 @@ const AddAddressPage = () => {
   const router = useRouter();
   const [addAddress, { isLoading }] = useAddAddressMutation();
 
-  const [countryIso, setCountryIso] = useState<string>("");
+  const [countryIso, setCountryIso] = useState<string>("GB");
   const [stateIso, setStateIso] = useState<string>("");
 
   const countryOptions = useMemo(() => {
@@ -32,8 +32,8 @@ const AddAddressPage = () => {
   }, []);
 
   const stateOptions = useMemo(() => {
-    if (!countryIso) return [];
-    return State.getStatesOfCountry(countryIso).map((s) => ({
+    const iso = countryIso || "GB";
+    return State.getStatesOfCountry(iso).map((s) => ({
       value: s.name,
       label: s.name,
       isoCode: s.isoCode,
@@ -41,11 +41,7 @@ const AddAddressPage = () => {
   }, [countryIso]);
 
   const cityOptions = useMemo(() => {
-    if (!countryIso || !stateIso) return [];
-    return City.getCitiesOfState(countryIso, stateIso).map((c) => ({
-      value: c.name,
-      label: c.name,
-    }));
+    return getCityOptions(countryIso || "GB", stateIso);
   }, [countryIso, stateIso]);
 
   const onFinish = async (values: AddressFormValues) => {
@@ -96,7 +92,7 @@ const AddAddressPage = () => {
             form={form}
             layout="vertical"
             onFinish={onFinish}
-            initialValues={{ isDefault: false }}
+            initialValues={{ isDefault: false, country: "United Kingdom" }}
             requiredMark={false}
           >
             <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
@@ -160,7 +156,7 @@ const AddAddressPage = () => {
                 options={stateOptions}
                 filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                 onChange={(val, opt: any) => {
-                  setStateIso(opt.isoCode);
+                  setStateIso(opt?.isoCode || "");
                 }}
               />
             </Form.Item>
@@ -170,14 +166,17 @@ const AddAddressPage = () => {
               name="city"
               rules={[{ required: true, message: "Required" }]}
             >
-              <Select
-                showSearch
-                placeholder="Select a city"
-                disabled={!stateIso}
-                className="w-full h-[42px] [&_.ant-select-selector]:!rounded-sm [&_.ant-select-selector]:!border-gray-300 hover:[&_.ant-select-selector]:!border-gray-400 focus:[&_.ant-select-selector]:!border-green-500 focus:[&_.ant-select-selector]:!ring-1 focus:[&_.ant-select-selector]:!ring-green-500"
+              <AutoComplete
                 options={cityOptions}
-                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-              />
+                filterOption={(inputValue, option) =>
+                  (option?.value ?? '').toLowerCase().includes(inputValue.toLowerCase())
+                }
+              >
+                <Input
+                  placeholder="Select or enter city"
+                  className="h-[42px] border-gray-300 hover:border-gray-400 focus:border-green-500 focus:ring-green-500 rounded-sm"
+                />
+              </AutoComplete>
             </Form.Item>
 
             <Form.Item label="Postal/ZIP code" name="postcode">

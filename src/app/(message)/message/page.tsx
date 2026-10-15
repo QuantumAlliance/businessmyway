@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiSend, FiMessageSquare, FiUser, FiCheck, FiShield } from "react-icons/fi";
+import { FiSend, FiMessageSquare, FiCheck, FiShield } from "react-icons/fi";
 import { Spin } from "antd";
 import {
   ChatMessage,
@@ -11,7 +11,6 @@ import {
   getChatHistory,
   getSocket,
   joinChatRoom,
-  leaveChatRoom,
   sendChatMessage,
   startChat,
 } from "@/lib/socket";
@@ -43,7 +42,6 @@ export default function MessagePage() {
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -70,10 +68,7 @@ export default function MessagePage() {
 
     const init = async () => {
       try {
-        const socket = getSocket(activeToken);
-        if (socket.connected) setConnected(true);
-        socket.on("connect", () => setConnected(true));
-        socket.on("disconnect", () => setConnected(false));
+        getSocket(activeToken);
 
         const res = await startChat(undefined, activeToken);
         if (!active) return;

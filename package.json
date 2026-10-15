@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "set NODE_OPTIONS=--use-system-ca&& next dev -p 3232",
-    "build": "next build",
-    "start": "next start -p 3232",
+    "dev": "node init && set NODE_OPTIONS=--use-system-ca&& next dev -p 3232",
+    "build": "node init && next build",
+    "start": "node init && next start -p 3232",
     "lint": "next lint"
   },
   "dependencies": {

@@ -29,11 +29,6 @@ const formatDate = (value?: string) => {
   });
 };
 
-const orderStatus = (order: ShopOrder) => {
-  if (order.status === "cancelled") return { label: "Cancelled", color: "default" as const };
-  if (order.deliveryType === "in_delivery") return { label: "Direct order", color: "gold" as const };
-  return { label: "Awaiting payment", color: "gold" as const };
-};
 
 const AdminDashboardPage = () => {
   const token = useAppSelector(selectToken);
@@ -141,12 +136,8 @@ const AdminDashboardPage = () => {
                       title: "Delivery Type",
                       dataIndex: "deliveryType",
                       key: "deliveryType",
-                      render: (type?: string) => {
-                        if (!type) return "—";
-                        if (type === "standard") return "Standard Delivery";
-                        if (type === "express") return "Express Delivery";
-                        return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
-                      },
+                      render: (type?: string) =>
+                        type?.toLowerCase() === "express" ? "Express Delivery" : "Standard Delivery",
                     },
                     {
                       title: "Ordere Date",

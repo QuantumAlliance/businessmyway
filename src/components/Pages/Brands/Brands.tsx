@@ -27,12 +27,11 @@ const Brands = () => {
     limit: PAGE_SIZE,
   });
 
-  const categories = categoryData?.data || [];
   const brands = brandData?.data || [];
   const total = brandData?.meta?.total ?? 0;
   const tabs = useMemo(
-    () => [ALL_BRANDS, ...categories.map((category) => category.name)],
-    [categories]
+    () => [ALL_BRANDS, ...(categoryData?.data || []).map((category) => category.name)],
+    [categoryData?.data]
   );
 
   const handleCategoryChange = (category: string) => {

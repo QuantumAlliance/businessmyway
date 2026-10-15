@@ -86,9 +86,10 @@ const AdminChatModal: React.FC<AdminChatModalProps> = ({
         // Also fetch all conversations for the admin
         const listRes = await startChat(undefined, token);
         if (active && listRes.ok && listRes.conversations) {
-          setConversations(listRes.conversations);
-          if (!initialUserId && listRes.conversations.length > 0 && !selectedConversation) {
-            setSelectedConversation(listRes.conversations[0]);
+          const convList = listRes.conversations;
+          setConversations(convList);
+          if (!initialUserId && convList.length > 0) {
+            setSelectedConversation((prev) => prev ?? convList[0]);
           }
         }
       } catch (err) {

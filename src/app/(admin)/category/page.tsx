@@ -12,7 +12,6 @@ import {
   type Category,
 } from "@/redux/features/category/categoryApi";
 import { isLockedCategoryName } from "@/constants/lockedCategories";
-import { CloudCog } from "lucide-react";
 
 type CategoryFormValues = {
   name: string;

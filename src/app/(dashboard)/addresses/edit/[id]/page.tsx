@@ -1,14 +1,15 @@
 "use client";
 
-import { Form, Input, Checkbox, ConfigProvider, Select, Spin } from "antd";
+import { Form, Input, Checkbox, ConfigProvider, Select, Spin, AutoComplete } from "antd";
 import { useRouter, useParams } from "next/navigation";
 import Swal from "sweetalert2";
 import { useUpdateAddressMutation, useGetProfileQuery, type SavedAddressPayload, type SavedAddress } from "@/redux/features/Profile/Profile";
-import { Country, State, City } from "country-state-city";
+import { Country, State } from "country-state-city";
 import { useState, useMemo, useEffect } from "react";
 import Autocomplete from "react-google-autocomplete";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { getCityOptions } from "@/constants/locations";
 
 type AddressFormValues = SavedAddressPayload;
 
@@ -21,7 +22,7 @@ const EditAddressPage = () => {
   const { data, isLoading: isLoadingProfile } = useGetProfileQuery({});
   const [updateAddress, { isLoading }] = useUpdateAddressMutation();
 
-  const [countryIso, setCountryIso] = useState<string>("");
+  const [countryIso, setCountryIso] = useState<string>("GB");
   const [stateIso, setStateIso] = useState<string>("");
 
   useEffect(() => {
@@ -42,7 +43,7 @@ const EditAddressPage = () => {
           isDefault: address.isDefault,
         });
 
-        const cIso = Country.getAllCountries().find(x => x.name === address.country)?.isoCode || "";
+        const cIso = Country.getAllCountries().find(x => x.name === address.country)?.isoCode || "GB";
         setCountryIso(cIso);
         if (cIso && address.province) {
           const pIso = State.getStatesOfCountry(cIso).find(x => x.name === address.province)?.isoCode || "";
@@ -65,8 +66,8 @@ const EditAddressPage = () => {
   }, []);
 
   const stateOptions = useMemo(() => {
-    if (!countryIso) return [];
-    return State.getStatesOfCountry(countryIso).map((s) => ({
+    const iso = countryIso || "GB";
+    return State.getStatesOfCountry(iso).map((s) => ({
       value: s.name,
       label: s.name,
       isoCode: s.isoCode,
@@ -74,11 +75,7 @@ const EditAddressPage = () => {
   }, [countryIso]);
 
   const cityOptions = useMemo(() => {
-    if (!countryIso || !stateIso) return [];
-    return City.getCitiesOfState(countryIso, stateIso).map((c) => ({
-      value: c.name,
-      label: c.name,
-    }));
+    return getCityOptions(countryIso || "GB", stateIso);
   }, [countryIso, stateIso]);
 
   const onFinish = async (values: AddressFormValues) => {
@@ -199,7 +196,7 @@ const EditAddressPage = () => {
                 options={stateOptions}
                 filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                 onChange={(val, opt: any) => {
-                  setStateIso(opt.isoCode);
+                  setStateIso(opt?.isoCode || "");
                 }}
               />
             </Form.Item>
@@ -209,14 +206,17 @@ const EditAddressPage = () => {
               name="city"
               rules={[{ required: true, message: "Required" }]}
             >
-              <Select
-                showSearch
-                placeholder="Select a city"
-                disabled={!stateIso}
-                className="w-full h-[42px] [&_.ant-select-selector]:!rounded-sm [&_.ant-select-selector]:!border-gray-300 hover:[&_.ant-select-selector]:!border-gray-400 focus:[&_.ant-select-selector]:!border-green-500 focus:[&_.ant-select-selector]:!ring-1 focus:[&_.ant-select-selector]:!ring-green-500"
+              <AutoComplete
                 options={cityOptions}
-                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-              />
+                filterOption={(inputValue, option) =>
+                  (option?.value ?? '').toLowerCase().includes(inputValue.toLowerCase())
+                }
+              >
+                <Input
+                  placeholder="Select or enter city"
+                  className="h-[42px] border-gray-300 hover:border-gray-400 focus:border-green-500 focus:ring-green-500 rounded-sm"
+                />
+              </AutoComplete>
             </Form.Item>
 
             <Form.Item label="Postal/ZIP code" name="postcode">

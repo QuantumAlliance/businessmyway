@@ -10,6 +10,7 @@ import {
   useGetOrderQuery,
   type ShopOrder,
 } from "@/redux/features/orders/orderApi";
+import Swal from "sweetalert2";
 
 const OrderSuccessContent = () => {
   const router = useRouter();
@@ -73,7 +74,15 @@ const OrderSuccessContent = () => {
   useEffect(() => {
     if (!order || redirected.current) return;
     redirected.current = true;
-    router.replace("/orderhistory?review=1");
+    Swal.fire({
+      title: "Good job!",
+      text: `Your order #${order.orderNumber} has been placed successfully!`,
+      icon: "success",
+      confirmButtonColor: "#BF8D2F",
+      confirmButtonText: "View Order History",
+    }).then(() => {
+      router.replace("/orderhistory");
+    });
   }, [order, router]);
 
   const loading = isDirect ? isDirectLoading : isLoading || (!order && !isError);
@@ -115,8 +124,31 @@ const OrderSuccessContent = () => {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-20 text-center text-gray-500">
-      Redirecting to order history...
+    <div className="mx-auto max-w-xl px-4 py-16 text-center">
+      <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 text-[#BF8D2F] border border-[#BF8D2F]/30 shadow-sm">
+        <svg className="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h1 className="font-serif text-3xl font-bold text-[#1A1A1A]">Order Confirmed!</h1>
+      <p className="mt-3 text-gray-600">
+        Thank you for your order! Your order{" "}
+        <span className="font-semibold text-gray-900">#{order.orderNumber}</span> has been placed successfully.
+      </p>
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <Link
+          href="/orderhistory"
+          className="w-full sm:w-auto rounded bg-[#BF8D2F] px-6 py-3 font-semibold text-white shadow hover:opacity-90 transition"
+        >
+          View Order History
+        </Link>
+        <Link
+          href="/"
+          className="w-full sm:w-auto rounded border border-gray-300 px-6 py-3 font-semibold text-gray-700 hover:bg-gray-50 transition"
+        >
+          Continue Shopping
+        </Link>
+      </div>
     </div>
   );
 };

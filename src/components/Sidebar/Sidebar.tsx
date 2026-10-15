@@ -10,8 +10,7 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { logout, selectCurrentUser, setUser } from "@/redux/features/auth/authSlice";
 import { useGetProfileQuery, useUpdateProfileMutation } from "@/redux/features/Profile/Profile";
 import { formatJoinDate, resolveMediaUrl } from "@/utils/media";
-
-const FALLBACK_AVATAR = "https://i.ibb.co/9kGRkyzV/profile1.png";
+import { FaRegUserCircle } from "react-icons/fa";
 
 const NAV_ITEMS = [
   { key: "orders", label: "Order History", href: "/orderhistory" },
@@ -35,7 +34,7 @@ const Sidebar = () => {
   const nameParts = (profile?.name || "User").trim().split(/\s+/);
   const firstName = nameParts[0] || "User";
   const lastName = nameParts.slice(1).join(" ");
-  const avatarSrc = resolveMediaUrl(profile?.avatar) || FALLBACK_AVATAR;
+  const avatarSrc = profile?.avatar ? resolveMediaUrl(profile.avatar) : null;
   const joinDate = formatJoinDate(profile?.createdAt);
 
   const closeDrawer = () => setDrawerOpen(false);
@@ -95,13 +94,19 @@ const Sidebar = () => {
             className="w-20 h-20 rounded-full overflow-hidden relative block"
             aria-label="Update profile photo"
           >
-            <Image
-              src={avatarSrc}
-              alt={profile?.name || "Profile"}
-              fill
-              sizes="80px"
-              className="object-cover"
-            />
+            {avatarSrc ? (
+              <Image
+                src={avatarSrc}
+                alt={profile?.name || "Profile"}
+                fill
+                sizes="80px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-[#FAFAF8] flex items-center justify-center text-[#BF8D2F] border border-[#E8E0D4] rounded-full">
+                <FaRegUserCircle size={52} />
+              </div>
+            )}
           </button>
           <button
             type="button"

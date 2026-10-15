@@ -7,7 +7,6 @@ import {
   FiMessageSquare,
   FiSend,
   FiCheck,
-  FiUser,
   FiSearch,
   FiRefreshCw,
   FiMenu,
@@ -20,7 +19,6 @@ import {
   getChatHistory,
   getSocket,
   joinChatRoom,
-  leaveChatRoom,
   sendChatMessage,
   startChat,
 } from "@/lib/socket";
@@ -70,7 +68,6 @@ function AdminMessagesContent() {
   const [loadingList, setLoadingList] = useState(true);
   const [loadingChat, setLoadingChat] = useState(false);
   const [sending, setSending] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -91,10 +88,7 @@ function AdminMessagesContent() {
 
     const init = async () => {
       try {
-        const socket = getSocket(activeToken);
-        if (socket.connected) setConnected(true);
-        socket.on("connect", () => setConnected(true));
-        socket.on("disconnect", () => setConnected(false));
+        getSocket(activeToken);
 
         let directConv: Conversation | null = null;
         if (initialUserId) {
@@ -123,8 +117,8 @@ function AdminMessagesContent() {
 
           if (directConv) {
             setSelectedConversation(directConv);
-          } else if (allConvs.length > 0 && !selectedConversation) {
-            setSelectedConversation(allConvs[0]);
+          } else if (allConvs.length > 0) {
+            setSelectedConversation((prev) => prev ?? allConvs[0]);
           }
         }
       } catch (err) {
@@ -259,7 +253,7 @@ function AdminMessagesContent() {
       socket.off("presence:update" as any, handlePresenceUpdate);
       socket.off("notification:new", handleNewNotification);
     };
-  }, [selectedConversation, activeToken]);
+  }, [selectedConversation, activeToken, currentUser]);
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

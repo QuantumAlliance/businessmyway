@@ -7,15 +7,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useGetOrdersQuery, useConfirmOrderReceivedMutation, type ShopOrder } from "@/redux/features/orders/orderApi";
 import ReviewModal from "@/components/UI/ReviewModal";
 import OrderDetailModal from "@/components/UI/OrderDetailModal";
+import InvoiceModal from "@/components/UI/InvoiceModal";
 import Pagination from "@/components/UI/Pagination";
 import { IoIosInformationCircleOutline } from "react-icons/io";
-import { FaFilePdf } from "react-icons/fa";
+import { FaFilePdf, FaEye } from "react-icons/fa";
 import { downloadInvoicePdf } from "@/utils/invoice";
+import Swal from "sweetalert2";
 
 const ORDERS_PER_PAGE = 5;
-
-const truncate = (text: string, max = 36) =>
-  text.length > max ? `${text.slice(0, max).trim()}…` : text;
 
 const statusMeta = (order: ShopOrder) => {
   if (order.status === "on_the_way") return { label: "On The Way", color: "cyan" as const };
@@ -33,7 +32,9 @@ const OrderHistoryContent = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [detailOpen, setDetailOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
+  const [invoiceOrder, setInvoiceOrder] = useState<ShopOrder | null>(null);
   const [confirmReceived, { isLoading: isConfirming }] = useConfirmOrderReceivedMutation();
 
   const totalPages = Math.max(1, Math.ceil(orders.length / ORDERS_PER_PAGE));
@@ -49,6 +50,21 @@ const OrderHistoryContent = () => {
   }, [currentPage, totalPages]);
 
   useEffect(() => {
+    const isOrderSuccess =
+      searchParams.get("orderSuccess") === "1" || searchParams.get("confirmed") === "1";
+    if (!isOrderSuccess) return;
+    const orderNum = searchParams.get("orderNumber");
+    Swal.fire({
+      title: "Good job!",
+      text: orderNum
+        ? `Your order #${orderNum} has been placed successfully!`
+        : "Your order has been placed successfully!",
+      icon: "success",
+      confirmButtonColor: "#BF8D2F",
+    });
+  }, [searchParams]);
+
+  useEffect(() => {
     if (searchParams.get("review") !== "1") return;
     if (!orders.length) return;
     setSelectedOrder(orders[0]);
@@ -62,6 +78,11 @@ const OrderHistoryContent = () => {
 
   const closeDetail = () => {
     setDetailOpen(false);
+  };
+
+  const openInvoice = (order: ShopOrder) => {
+    setInvoiceOrder(order);
+    setInvoiceOpen(true);
   };
 
   const openReview = (order: ShopOrder) => {
@@ -87,22 +108,32 @@ const OrderHistoryContent = () => {
   };
 
   const columns: ColumnsType<ShopOrder> = [
-      {
+    {
       title: "Sl",
       dataIndex: "sl",
       key: "sl",
+      width: 50,
       render: (_: any, __: any, index: number) => (
-        <span className="font-semibold text-[#2b2b2b]">{index + 1}</span>
+        <span className="font-semibold text-[#2b2b2b]">
+          {(safePage - 1) * ORDERS_PER_PAGE + index + 1}
+        </span>
       ),
     },
     {
-      title: "Tracking ID",
+      title: "Tracking",
       key: "trackingId",
-      render: (_, order) => (
-        <span className="font-semibold text-[#2b2b2b]">
-          {order.shippingInfo?.trackingId ? `#${order.shippingInfo.trackingId}` : "Processing"}
-        </span>
-      ),
+      render: (_, order) => {
+        if (order.shippingInfo?.trackingId) {
+          return (
+            <div className="flex flex-col min-w-0">
+              <span className="font-mono text-xs font-semibold ">
+                #{order.shippingInfo.trackingId}
+              </span>
+            </div>
+          );
+        }
+        return <span className="text-xs text-gray-400 italic">Processing</span>;
+      },
     },
     {
       title: "Delivery Date",
@@ -123,10 +154,11 @@ const OrderHistoryContent = () => {
       dataIndex: "items",
       key: "items",
       render: (items: ShopOrder["items"]) => {
-        const label = items.map((item) => `${item.qty}`).join(" · ");
+        const totalQty = items?.reduce((sum, item) => sum + item.qty, 0) || 0;
+        const names = items?.map((item) => `${item.name} (${item.qty})`).join(", ");
         return (
-          <span className="block max-w-[200px] truncate text-[#4d4a44]" title={label}>
-            {label}
+          <span className="block max-w-[200px] truncate text-[#4d4a44]" title={names}>
+            {totalQty} {totalQty === 1 ? "item" : "items"} · {items?.[0]?.name}
           </span>
         );
       },
@@ -135,14 +167,9 @@ const OrderHistoryContent = () => {
       title: "Delivery Type",
       dataIndex: "deliveryType",
       key: "deliveryType",
-      render: (type?: string) => {
-        if (!type) return "—";
-        if (type === "standard") return "Standard Delivery";
-        if (type === "express") return "Express Delivery";
-        return type.charAt(0).toUpperCase() + type.slice(1).replace(/_/g, ' ');
-      },
+      render: (type?: string) =>
+        type?.toLowerCase() === "express" ? "Express Delivery" : "Standard Delivery",
     },
-
     {
       title: "Status",
       key: "status",
@@ -166,33 +193,42 @@ const OrderHistoryContent = () => {
       key: "invoice",
       align: "center",
       render: (_, order) => {
-        const isAvailable = Boolean(order.invoice || order.status !== "pending");
-        if (!isAvailable) {
-          return <span className="font-medium text-gray-400">—</span>;
-        }
         return (
-          <Tooltip title="Download Invoice (PDF)">
-            <button
-              type="button"
-              onClick={() => downloadInvoicePdf(order)}
-              className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100 hover:border-red-300 shadow-sm"
-              aria-label="Download Invoice PDF"
-            >
-              <FaFilePdf size={18} />
-            </button>
-          </Tooltip>
+          <div className="flex items-center justify-center gap-1.5">
+            <Tooltip title="View Invoice">
+              <button
+                type="button"
+                onClick={() => openInvoice(order)}
+                className="inline-flex items-center justify-center rounded-lg border border-[#BF8D2F] bg-white p-2 text-[#BF8D2F] transition-colors hover:bg-[#BF8D2F] hover:text-white shadow-sm"
+                aria-label="View Invoice"
+              >
+                <FaEye size={15} />
+              </button>
+            </Tooltip>
+            <Tooltip title="Download Invoice (PDF)">
+              <button
+                type="button"
+                onClick={() => downloadInvoicePdf(order)}
+                className="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100 hover:border-red-300 shadow-sm"
+                aria-label="Download Invoice PDF"
+              >
+                <FaFilePdf size={15} />
+              </button>
+            </Tooltip>
+          </div>
         );
       },
     },
     {
       title: "Review",
-      key: "total",
-      align: "right",
+      key: "review",
+      align: "center",
       render: (_, order) => (
         <button
           type="button"
           onClick={() => openReview(order)}
-          className="rounded-md border border-[#BF8D2F] px-3 py-1.5 text-xs font-semibold text-[#BF8D2F] transition-colors hover:bg-[#BF8D2F] hover:text-white"
+          disabled={order.status !== "delivered"}
+          className="rounded-md border border-[#BF8D2F] px-3 py-1.5 text-xs font-semibold text-[#BF8D2F] transition-colors hover:bg-[#BF8D2F] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Review
         </button>
@@ -201,13 +237,13 @@ const OrderHistoryContent = () => {
     {
       title: "Receive",
       key: "receive",
-      align: "right",
+      align: "center",
       render: (_, order) => (
         <button
           type="button"
           onClick={() => handleConfirmReceived(order)}
           disabled={isConfirming || order.status !== "on_the_way"}
-          className="rounded-sm border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="rounded-sm border border-green-600 bg-green-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Receive
         </button>
@@ -218,15 +254,16 @@ const OrderHistoryContent = () => {
       key: "action",
       align: "center",
       render: (_, order) => (
-        <div className="flex items-center justify-center  gap-2">
-          <button
-            type="button"
-            onClick={() => openDetail(order)}
-            className="rounded-full border border-[#E5E5E5] px-3 py-1.5 text-xs l font-semibold text-[#5C564C] transition-colors hover:border-[#BF8D2F] hover:text-[#BF8D2F]"
-          >
-            <IoIosInformationCircleOutline size={24} />
-          </button>
-           
+        <div className="flex items-center justify-center">
+          <Tooltip title="View Order Details">
+            <button
+              type="button"
+              onClick={() => openDetail(order)}
+              className="rounded-full border border-[#E5E5E5] p-2 text-xs font-semibold text-[#5C564C] transition-colors hover:border-[#BF8D2F] hover:text-[#BF8D2F]"
+            >
+              <IoIosInformationCircleOutline size={20} />
+            </button>
+          </Tooltip>
         </div>
       ),
     },
@@ -248,7 +285,7 @@ const OrderHistoryContent = () => {
           dataSource={paginatedOrders}
           loading={isLoading}
           pagination={false}
-          scroll={{ x: 960 }}
+          scroll={{ x: 1050 }}
           locale={{ emptyText: "You have not placed any orders yet." }}
         />
       </div>
@@ -261,6 +298,7 @@ const OrderHistoryContent = () => {
         />
       ) : null}
 
+      {/* Order Detail Modal */}
       <OrderDetailModal
         open={detailOpen}
         order={selectedOrder}
@@ -269,6 +307,14 @@ const OrderHistoryContent = () => {
         onConfirmReceived={handleConfirmReceived}
         isConfirming={isConfirming}
       />
+
+      {/* Direct Invoice Viewer Modal */}
+      <InvoiceModal
+        open={invoiceOpen}
+        order={invoiceOrder}
+        onClose={() => setInvoiceOpen(false)}
+      />
+
       <ReviewModal open={reviewOpen} onClose={closeReview} order={selectedOrder} />
     </div>
   );

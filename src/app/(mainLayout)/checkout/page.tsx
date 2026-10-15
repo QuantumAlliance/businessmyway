@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { Form, Input, Select, Checkbox, ConfigProvider } from "antd";
+import { Form, Input, Select, Checkbox, ConfigProvider, AutoComplete } from "antd";
 import Swal from "sweetalert2";
 import { LockOutlined } from "@ant-design/icons";
 import ProductPhoto from "@/components/UI/ProductPhoto";
@@ -16,8 +16,9 @@ import { useRouter } from "next/navigation";
 import { resolveMediaUrl } from "@/utils/media";
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
-import { Country, State, City } from "country-state-city";
+import { Country, State } from "country-state-city";
 import Autocomplete from "react-google-autocomplete";
+import { getCityOptions } from "@/constants/locations";
 
 import { useGetDeliveryQuery } from "@/redux/features/delivery/deliveryApi";
 import { CiDeliveryTruck } from "react-icons/ci";
@@ -32,7 +33,7 @@ type CheckoutFormValues = {
   email?: string;
   location?: string;
   address?: string;
-  apartment?: string; 
+  apartment?: string;
   city?: string;
   province?: string;
   country?: string;
@@ -73,7 +74,7 @@ const CheckoutPage = () => {
   const [selectedAddressData, setSelectedAddressData] = React.useState<any>(null);
   const [mounted, setMounted] = React.useState(false);
 
-  const [countryIso, setCountryIso] = React.useState<string>("");
+  const [countryIso, setCountryIso] = React.useState<string>("GB");
   const [stateIso, setStateIso] = React.useState<string>("");
 
   const countryOptions = useMemo(() => {
@@ -87,8 +88,8 @@ const CheckoutPage = () => {
   }, []);
 
   const stateOptions = useMemo(() => {
-    if (!countryIso) return [];
-    return State.getStatesOfCountry(countryIso).map((s) => ({
+    const iso = countryIso || "GB";
+    return State.getStatesOfCountry(iso).map((s) => ({
       value: s.name,
       label: s.name,
       isoCode: s.isoCode,
@@ -96,11 +97,7 @@ const CheckoutPage = () => {
   }, [countryIso]);
 
   const cityOptions = useMemo(() => {
-    if (!countryIso || !stateIso) return [];
-    return City.getCitiesOfState(countryIso, stateIso).map((c) => ({
-      value: c.name,
-      label: c.name,
-    }));
+    return getCityOptions(countryIso || "GB", stateIso);
   }, [countryIso, stateIso]);
 
   const { data: profileData, isFetching: isProfileFetching } = useGetProfileQuery(undefined, { skip: !token || isAdmin });
@@ -140,8 +137,8 @@ const CheckoutPage = () => {
   const deliveryFee = isFreeDelivery
     ? 0
     : selectedDeliveryMethod === "express"
-    ? expressPrice
-    : standardPrice;
+      ? expressPrice
+      : standardPrice;
 
   const total = subtotal + deliveryFee;
 
@@ -160,7 +157,7 @@ const CheckoutPage = () => {
     setMounted(true);
   }, []);
 
-  const addresses = profile?.savedAddresses || [];
+  const addresses = useMemo(() => profile?.savedAddresses || [], [profile?.savedAddresses]);
   const defaultAddress = addresses.find((a: any) => a.isDefault) || addresses[0];
 
   const addressOptions = useMemo(() => {
@@ -213,7 +210,7 @@ const CheckoutPage = () => {
     } else {
       setSelectedAddressMode("new");
       setSelectedAddressData(null);
-      setCountryIso("");
+      setCountryIso("GB");
       setStateIso("");
       form.setFieldsValue({
         savedAddress: "new",
@@ -224,7 +221,7 @@ const CheckoutPage = () => {
         apartment: "",
         city: undefined,
         province: undefined,
-        country: undefined,
+        country: "United Kingdom",
         postcode: "",
         name: profile?.name || "",
         email: profile?.email || "",
@@ -246,7 +243,7 @@ const CheckoutPage = () => {
     setSelectedAddressMode(value);
     if (value === "new") {
       setSelectedAddressData(null);
-      setCountryIso("");
+      setCountryIso("GB");
       setStateIso("");
       form.setFieldsValue({
         savedAddress: "new",
@@ -260,7 +257,7 @@ const CheckoutPage = () => {
         apartment: "",
         city: undefined,
         province: undefined,
-        country: undefined,
+        country: "United Kingdom",
         postcode: "",
         isDefaultAddress: false,
       });
@@ -340,7 +337,7 @@ const CheckoutPage = () => {
     const countryObj = Country.getAllCountries().find(x => x.name.toLowerCase() === country.toLowerCase() || x.isoCode.toLowerCase() === country.toLowerCase());
     const cIso = countryObj?.isoCode || "";
     setCountryIso(cIso);
-    
+
     if (cIso && province) {
       const stateObj = State.getStatesOfCountry(cIso).find(x => x.name.toLowerCase() === province.toLowerCase() || x.isoCode.toLowerCase() === province.toLowerCase());
       if (stateObj) {
@@ -355,14 +352,14 @@ const CheckoutPage = () => {
 
     if (city && cIso) {
       const stateToUse = State.getStatesOfCountry(cIso).find(x => x.name.toLowerCase() === province.toLowerCase() || x.isoCode.toLowerCase() === province.toLowerCase())?.isoCode || "";
-      const cityObj = City.getCitiesOfState(cIso, stateToUse).find(x => x.name.toLowerCase() === city.toLowerCase());
+      const cityObj = getCityOptions(cIso, stateToUse).find(x => x.value.toLowerCase() === city.toLowerCase());
       if (cityObj) {
-        city = cityObj.name;
+        city = cityObj.value;
       }
     }
 
     form.setFieldsValue({
-      address, 
+      address,
       city,
       province: province || undefined,
       country: countryObj?.name || country || undefined,
@@ -389,12 +386,26 @@ const CheckoutPage = () => {
     }
     try {
       const values = await form.validateFields();
+      const customerFullName =
+        [values.firstName, values.lastName].filter(Boolean).join(" ").trim() ||
+        values.name ||
+        profile?.name ||
+        "Customer";
+      const fullLocation =
+        values.location ||
+        [values.address, values.apartment, values.city, values.province, values.postcode, values.country]
+          .filter(Boolean)
+          .join(", ")
+          .trim();
+      const customerEmail = values.email || profile?.email || "";
+      const customerPhone = values.phone || profile?.phone || "";
+
       const result = await checkoutOrder({
         ...values,
-        name: values.name || "",
-        phone: values.phone || "",
-        email: values.email || "",
-        location: values.location || "",
+        name: customerFullName,
+        phone: customerPhone,
+        email: customerEmail,
+        location: fullLocation,
         deliveryType: selectedDeliveryMethod,
         origin: window.location.origin,
       }).unwrap();
@@ -413,6 +424,15 @@ const CheckoutPage = () => {
       }
       if (result.data?.url) {
         window.location.assign(result.data.url);
+      } else {
+        await Swal.fire({
+          title: "Good job!",
+          text: `Your order #${result.data?.orderNumber || ""} has been placed successfully!`,
+          icon: "success",
+          confirmButtonColor: "#BF8D2F",
+          confirmButtonText: "View Order History",
+        });
+        router.push("/orderhistory");
       }
     } catch (error: unknown) {
       const message =
@@ -477,7 +497,7 @@ const CheckoutPage = () => {
                   options={stateOptions}
                   filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
                   onChange={(val, opt: any) => {
-                    setStateIso(opt.isoCode);
+                    setStateIso(opt?.isoCode || "");
                   }}
                 />
               </Form.Item>
@@ -507,13 +527,17 @@ const CheckoutPage = () => {
 
             <div className="grid grid-cols-2 gap-x-4 mb-4">
               <Form.Item label="City" name="city" className="mb-0" rules={[{ required: true, message: "Required" }]}>
-                <Select
-                  showSearch
-                  disabled={!stateIso}
-                  className="w-full h-[42px] [&_.ant-select-selector]:!rounded-sm [&_.ant-select-selector]:!border-gray-300 hover:[&_.ant-select-selector]:!border-gray-400 focus:[&_.ant-select-selector]:!border-green-500 focus:[&_.ant-select-selector]:!ring-1 focus:[&_.ant-select-selector]:!ring-green-500"
+                <AutoComplete
                   options={cityOptions}
-                  filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
-                />
+                  filterOption={(inputValue, option) =>
+                    (option?.value ?? "").toLowerCase().includes(inputValue.toLowerCase())
+                  }
+                >
+                  <Input
+                    placeholder="Enter or select city"
+                    className="h-[42px] border-gray-300 hover:border-gray-400 focus:border-green-500 focus:ring-green-500 rounded-sm"
+                  />
+                </AutoComplete>
               </Form.Item>
               <Form.Item
                 label="Postal/ZIP Code"
@@ -591,11 +615,10 @@ const CheckoutPage = () => {
                   {/* Standard Delivery Option */}
                   <div
                     onClick={() => setSelectedDeliveryMethod("standard")}
-                    className={`flex items-center justify-between p-3.5 rounded-md border-2 cursor-pointer transition-all ${
-                      selectedDeliveryMethod === "standard"
-                        ? "border-[#BF8D2F] bg-[#BF8D2F]/5 shadow-sm"
-                        : "border-[#E5E5E5] hover:border-gray-300 bg-white"
-                    }`}
+                    className={`flex items-center justify-between p-3.5 rounded-md border-2 cursor-pointer transition-all ${selectedDeliveryMethod === "standard"
+                      ? "border-[#BF8D2F] bg-[#BF8D2F]/5 shadow-sm"
+                      : "border-[#E5E5E5] hover:border-gray-300 bg-white"
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -626,11 +649,10 @@ const CheckoutPage = () => {
                   {/* Express Delivery Option */}
                   <div
                     onClick={() => setSelectedDeliveryMethod("express")}
-                    className={`flex items-center justify-between p-3.5 rounded-md border-2 cursor-pointer transition-all ${
-                      selectedDeliveryMethod === "express"
-                        ? "border-[#BF8D2F] bg-[#BF8D2F]/5 shadow-sm"
-                        : "border-[#E5E5E5] hover:border-gray-300 bg-white"
-                    }`}
+                    className={`flex items-center justify-between p-3.5 rounded-md border-2 cursor-pointer transition-all ${selectedDeliveryMethod === "express"
+                      ? "border-[#BF8D2F] bg-[#BF8D2F]/5 shadow-sm"
+                      : "border-[#E5E5E5] hover:border-gray-300 bg-white"
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <input
@@ -672,71 +694,71 @@ const CheckoutPage = () => {
               Order summary
             </h3>
 
-        {isCartFetching ? (
-          <p className="text-sm text-gray-500 py-4">Loading cart...</p>
-        ) : (
-          <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
-            {cartItems.map((item: any) => (
-              <div key={item.id} className="flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded border border-[#E5E5E5] bg-white">
-                  <ProductPhoto src={item.image} alt={item.title} className="h-full w-full object-contain p-1" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-medium text-[#1A1A1A]">{item.title}</p>
-                  <p className="text-xs text-gray-500">Qty {item.qty}</p>
-                </div>
-                <p className="text-sm font-semibold text-[#1A1A1A] shrink-0">
-                  £{(item.price * item.qty).toFixed(2)}
-                </p>
+            {isCartFetching ? (
+              <p className="text-sm text-gray-500 py-4">Loading cart...</p>
+            ) : (
+              <div className="max-h-[50vh] space-y-3 overflow-y-auto pr-1">
+                {cartItems.map((item: any) => (
+                  <div key={item.id} className="flex items-center gap-3">
+                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded border border-[#E5E5E5] bg-white">
+                      <ProductPhoto src={item.image} alt={item.title} className="h-full w-full object-contain p-1" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-1 text-sm font-medium text-[#1A1A1A]">{item.title}</p>
+                      <p className="text-xs text-gray-500">Qty {item.qty}</p>
+                    </div>
+                    <p className="text-sm font-semibold text-[#1A1A1A] shrink-0">
+                      £{(item.price * item.qty).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
+                {cartItems.length === 0 && (
+                  <p className="text-sm text-gray-500">Your cart is empty.</p>
+                )}
               </div>
-            ))}
-            {cartItems.length === 0 && (
-              <p className="text-sm text-gray-500">Your cart is empty.</p>
             )}
-          </div>
-        )}
 
-        <div className="mt-4 space-y-2 border-t border-[#E5E5E5] pt-4 text-sm">
-          <div className="flex justify-between text-[#1A1A1A]">
-            <span>Subtotal</span>
-            <span>£{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[#1A1A1A]">
-            <span>
-              {selectedDeliveryMethod === "express" ? "Express Delivery" : "Standard Delivery"}
-            </span>
-            <span>
-              {isFreeDelivery ? (
-                <span className="font-semibold text-emerald-600">FREE</span>
-              ) : (
-                `£${deliveryFee.toFixed(2)}`
-              )}
-            </span>
-          </div>
-          <div className="flex items-center justify-between pt-2 border-t border-dashed border-[#E5E5E5]">
-            <span className="font-semibold text-[#1A1A1A]">Total</span>
-            <span className="text-lg font-bold text-[#BF8D2F]">£{total.toFixed(2)}</span>
-          </div>
-        </div>
-          
+            <div className="mt-4 space-y-2 border-t border-[#E5E5E5] pt-4 text-sm">
+              <div className="flex justify-between text-[#1A1A1A]">
+                <span>Subtotal</span>
+                <span>£{subtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-[#1A1A1A]">
+                <span>
+                  {selectedDeliveryMethod === "express" ? "Express Delivery" : "Standard Delivery"}
+                </span>
+                <span>
+                  {isFreeDelivery ? (
+                    <span className="font-semibold text-emerald-600">FREE</span>
+                  ) : (
+                    `£${deliveryFee.toFixed(2)}`
+                  )}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-dashed border-[#E5E5E5]">
+                <span className="font-semibold text-[#1A1A1A]">Total</span>
+                <span className="text-lg font-bold text-[#BF8D2F]">£{total.toFixed(2)}</span>
+              </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={onPay}
-            disabled={isLoading || isProfileFetching || cartItems.length === 0}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-sm bg-[#BF8D2F] py-3.5 font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-          >
-            <LockOutlined />
-            {isLoading ? "Redirecting to Viva Payments..." : "Pay securely with Viva Payments"}
-          </button>
-          <p className="mt-3 text-center text-xs text-gray-400">
-            You will be redirected to Viva Payments to complete payment.
-          </p>
+
+            <button
+              type="button"
+              onClick={onPay}
+              disabled={isLoading || isProfileFetching || cartItems.length === 0}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-sm bg-[#BF8D2F] py-3.5 font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
+            >
+              <LockOutlined />
+              {isLoading ? "Redirecting to Viva Payments..." : "Pay securely with Viva Payments"}
+            </button>
+            <p className="mt-3 text-center text-xs text-gray-400">
+              You will be redirected to Viva Payments to complete payment.
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default CheckoutPage;

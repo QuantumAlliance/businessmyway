@@ -7,7 +7,6 @@ import { selectToken } from "@/redux/features/auth/authSlice";
 import { getSocket } from "@/lib/socket";
 import { playNotificationSound } from "@/utils/sound";
 import { baseApi } from "@/redux/api/baseApi";
-import { FiBell } from "react-icons/fi";
 import { useRouter } from "next/navigation";
 
 export interface RealtimeNotification {
@@ -34,7 +33,7 @@ export const GlobalNotificationListener = () => {
     // Connect / retrieve active socket
     const socket = getSocket(token);
 
-    const handleNewNotification = (data: RealtimeNotification) => {
+    const handleNewNotification = () => {
       // Play sound (throttled) and invalidate cache
       const now = Date.now();
       if (now - lastSoundPlayedAt.current > 500) {

@@ -6,7 +6,8 @@ import TheReserve from "@/assets/home/TheReserve.png";
 import Link from "next/link";
 const TheReserveCollection = () => {
   return (
-    <section className="relative py-10  h-[38vh] sm:h-[48vh] md:h-[60vh] lg:h-[72vh] overflow-hidden">
+    <section className="relative py-10 min-h-[400px] h-[45vh] sm:h-[48vh] md:h-[60vh] lg:h-[72vh] overflow-hidden flex items-center">
+      {/* Background Image */}
       <Image
         src={TheReserve}
         alt="Hero section background"
@@ -14,7 +15,7 @@ const TheReserveCollection = () => {
         priority
         quality={100}
         sizes="100vw"
-        className="object-fill -z-10"
+        className="object-cover -z-10"
       />
       <div className="relative xl:container px-2 xl:px-0 h-full flex flex-col justify-center">
         <div className="mt-16">

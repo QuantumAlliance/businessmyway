@@ -28,7 +28,7 @@ export type ShopOrder = {
   id: string;
   orderNumber: string;
   status: "pending" | "on_the_way" | "delivered";
-  deliveryType?: "standard" | "express" | "free_delivery" | "in_delivery" | "paid_delivery" | string;
+  deliveryType?: "standard" | "express" | string;
   deliveryFee?: number;
   subtotal: number;
   total?: number;
@@ -45,7 +45,7 @@ type CheckoutPayload = {
   phone: string;
   email: string;
   location: string;
-  deliveryType?: "standard" | "express" | "free_delivery" | "paid_delivery" | string;
+  deliveryType?: "standard" | "express" | string;
   origin: string;
 };
 

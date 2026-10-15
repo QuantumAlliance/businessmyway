@@ -1,19 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Form, Input, Spin } from "antd";
 import Swal from "sweetalert2";
-import { useRouter } from "next/navigation";
 import {
-  useDeleteProfileMutation,
   useGetProfileQuery,
   useUpdateProfileMutation,
 } from "@/redux/features/Profile/Profile";
 import { useAppDispatch } from "@/redux/hooks";
-import { logout, setUser } from "@/redux/features/auth/authSlice";
-import { formatJoinDate, resolveMediaUrl } from "@/utils/media";
-
-const FALLBACK_AVATAR = "https://i.ibb.co/9kGRkyzV/profile1.png";
+import { setUser } from "@/redux/features/auth/authSlice";
 
 type ProfileFormValues = {
   firstName: string;
@@ -32,18 +27,13 @@ const splitName = (fullName?: string) => {
 
 const Page = () => {
   const [form] = Form.useForm<ProfileFormValues>();
-  const router = useRouter();
   const dispatch = useAppDispatch();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [, setAvatarPreview] = useState<string | null>(null);
   const { data, isLoading, isError } = useGetProfileQuery({});
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation();
-  const [deleteProfile, { isLoading: isDeleting }] = useDeleteProfileMutation();
 
   const user = data?.data;
-  const currentAvatar = avatarPreview || resolveMediaUrl(user?.avatar) || FALLBACK_AVATAR;
-  const joinDate = formatJoinDate(user?.createdAt);
 
   useEffect(() => {
     if (!user) return;
@@ -84,36 +74,6 @@ const Page = () => {
       Swal.fire({
         title: "Error",
         text: error?.data?.message || "Failed to update profile.",
-        icon: "error",
-      });
-    }
-  };
-
-  const handleDelete = async () => {
-    const confirm = await Swal.fire({
-      title: "Delete account?",
-      text: "This will deactivate your account.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#C1892F",
-      confirmButtonText: "Yes, delete",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      await deleteProfile(undefined).unwrap();
-      dispatch(logout());
-      Swal.fire({
-        title: "Deleted",
-        text: "Your account has been deleted.",
-        icon: "success",
-      });
-      router.push("/login");
-    } catch (error: any) {
-      Swal.fire({
-        title: "Error",
-        text: error?.data?.message || "Failed to delete account.",
         icon: "error",
       });
     }

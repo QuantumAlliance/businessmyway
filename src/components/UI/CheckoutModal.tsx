@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Form, Input, Modal } from "antd";
 import Swal from "sweetalert2";
 import { LockOutlined } from "@ant-design/icons";
@@ -55,6 +56,7 @@ const formatDefaultLocation = (profile?: {
 };
 
 const CheckoutModal = ({ open, onClose, cartItems, onCartCleared }: CheckoutModalProps) => {
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const isAdmin = isAdminRole(useAppSelector(selectCurrentUser)?.role);
   const [form] = Form.useForm<CheckoutFormValues>();
@@ -124,6 +126,16 @@ const CheckoutModal = ({ open, onClose, cartItems, onCartCleared }: CheckoutModa
       if (result.data?.url) {
         onClose();
         window.location.assign(result.data.url);
+      } else {
+        onClose();
+        await Swal.fire({
+          title: "Good job!",
+          text: `Your order #${result.data?.orderNumber || ""} has been placed successfully!`,
+          icon: "success",
+          confirmButtonColor: "#BF8D2F",
+          confirmButtonText: "View Order History",
+        });
+        router.push("/orderhistory");
       }
     } catch (error: unknown) {
       const message =

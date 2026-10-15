@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -11,8 +12,7 @@ import {
 import { useAppDispatch } from "@/redux/hooks";
 import { setUser } from "@/redux/features/auth/authSlice";
 import { formatJoinDate, resolveMediaUrl } from "@/utils/media";
-
-const FALLBACK_AVATAR = "https://i.ibb.co/9kGRkyzV/profile1.png";
+import { FaRegUserCircle } from "react-icons/fa";
 
 type ProfileFormValues = {
   firstName: string;
@@ -41,7 +41,7 @@ const AdminProfilePage = () => {
   const [updateProfile, { isLoading: isSaving }] = useUpdateProfileMutation();
 
   const user = data?.data;
-  const currentAvatar = avatarPreview || resolveMediaUrl(user?.avatar) || FALLBACK_AVATAR;
+  const currentAvatar = avatarPreview || (user?.avatar ? resolveMediaUrl(user.avatar) : null);
   const joinDate = formatJoinDate(user?.createdAt);
 
   useEffect(() => {
@@ -147,12 +147,16 @@ const AdminProfilePage = () => {
         className="rounded-2xl border border-[#E8E0D4] bg-white p-5 md:p-8"
       >
         <div className="flex items-center gap-4 mb-6">
-          <label className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-[#E8E0D4]">
-            <img
-              src={currentAvatar}
-              alt={user?.name || "Admin"}
-              className="h-full w-full object-cover"
-            />
+          <label className="relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-full border border-[#E8E0D4] bg-[#FAFAF8] flex items-center justify-center">
+            {currentAvatar ? (
+              <img
+                src={currentAvatar}
+                alt={user?.name || "Admin"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <FaRegUserCircle size={52} className="text-[#BF8D2F]" />
+            )}
             <span className="absolute inset-x-0 bottom-0 flex justify-center bg-black/45 py-1 text-white">
               <FiCamera size={14} />
             </span>

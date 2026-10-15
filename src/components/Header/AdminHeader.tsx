@@ -15,9 +15,7 @@ import {
   useMarkNotificationReadMutation,
 } from "@/redux/features/notifications/notificationApi";
 import { resolveMediaUrl } from "@/utils/media";
-
-const FALLBACK_AVATAR =
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop";
+import { FaRegUserCircle } from "react-icons/fa";
 
 const timeAgo = (value?: string) => {
   if (!value) return "";
@@ -61,7 +59,7 @@ const AdminHeader = ({ onMenuClick, collapsed, onToggleCollapse }: AdminHeaderPr
   const [markNotificationRead] = useMarkNotificationReadMutation();
   const [markAllNotificationsRead] = useMarkAllNotificationsReadMutation();
   const profile = data?.data || cookieUser;
-  const avatar = resolveMediaUrl(profile?.avatar) || FALLBACK_AVATAR;
+  const avatar = profile?.avatar ? resolveMediaUrl(profile.avatar) : null;
   const role = formatRole(profile?.role);
   const notifications = notificationData?.data || [];
   const unreadCount = unreadData?.data?.count ?? notifications.filter((item) => !item.isRead).length;
@@ -124,11 +122,17 @@ const AdminHeader = ({ onMenuClick, collapsed, onToggleCollapse }: AdminHeaderPr
             </button>
 
             <Link href="/adminProfile" className="flex items-center gap-3 rounded-xl pr-3 hover:bg-[#F6F3EE]">
-              <img
-                src={avatar}
-                alt={profile?.name || "Admin"}
-                className="h-9 w-9 rounded-full object-cover"
-              />
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={profile?.name || "Admin"}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <div className="h-9 w-9 rounded-full bg-[#FAFAF8] border border-[#E8E0D4] flex items-center justify-center text-[#BF8D2F]">
+                  <FaRegUserCircle size={22} />
+                </div>
+              )}
               <div className="hidden sm:block leading-tight">
                 <p className="text-sm font-medium truncate max-w-[140px]">
                   {profile?.name || "Admin"}

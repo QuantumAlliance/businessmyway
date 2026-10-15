@@ -10,7 +10,6 @@ import {
   getChatHistory,
   getSocket,
   joinChatRoom,
-  leaveChatRoom,
   sendChatMessage,
   startChat,
 } from "@/lib/socket";
@@ -67,7 +66,6 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [connected, setConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -93,12 +91,7 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({
 
     const initChat = async () => {
       try {
-        const socket = getSocket(activeToken);
-        if (socket.connected) {
-          setConnected(true);
-        }
-        socket.on("connect", () => setConnected(true));
-        socket.on("disconnect", () => setConnected(false));
+        getSocket(activeToken);
 
         // Start / resume conversation
         const res = await startChat(targetUserId, activeToken);
@@ -140,7 +133,7 @@ const ChatDrawer: React.FC<ChatDrawerProps> = ({
     return () => {
       active = false;
     };
-  }, [open, token, targetUserId]);
+  }, [open, token, targetUserId, onClose, router]);
 
   const conversationRef = useRef<Conversation | null>(null);
   conversationRef.current = conversation;
